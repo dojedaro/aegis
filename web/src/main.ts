@@ -4,35 +4,6 @@ import { RiskMatrix } from "./components/RiskMatrix.js";
 import { CredentialViewer } from "./components/CredentialViewer.js";
 import { AboutDemo } from "./components/AboutDemo.js";
 
-// Initialize components
-const complianceStatus = new ComplianceStatus("compliance-status-widget");
-const auditTrail = new AuditTrail("audit-trail-widget");
-const riskMatrix = new RiskMatrix("risk-matrix-widget");
-const credentialViewer = new CredentialViewer("credential-viewer-widget");
-const aboutDemo = new AboutDemo("about-content");
-
-// Navigation handling
-const navButtons = document.querySelectorAll<HTMLButtonElement>(".nav-btn");
-const views = document.querySelectorAll<HTMLElement>(".view");
-
-navButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const targetView = btn.dataset.view;
-
-    // Update active button
-    navButtons.forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    // Show target view
-    views.forEach((view) => {
-      view.classList.remove("active");
-      if (view.id === `${targetView}-view`) {
-        view.classList.add("active");
-      }
-    });
-  });
-});
-
 // Demo walkthrough functionality
 interface DemoStep {
   title: string;
@@ -124,7 +95,7 @@ Critical: 17-25 (Red)
       <p>You've seen the key features! To learn more:</p>
       <ul style="margin: 1rem 0; padding-left: 1.5rem; color: var(--color-text-secondary);">
         <li>Visit the <strong>About This Demo</strong> tab for architecture details</li>
-        <li>Check the <a href="https://github.com/dojedaro" target="_blank" style="color: var(--color-primary);">GitHub repository</a> for full source code</li>
+        <li>Check the <a href="https://github.com/dojedaro/aegis" target="_blank" style="color: var(--color-primary);">GitHub repository</a> for full source code</li>
         <li>Read the README.md for usage instructions</li>
       </ul>
       <p style="margin-top: 1.5rem; color: var(--color-primary); font-weight: 500;">Built by Daniel Ojeda | AI Enabler</p>
@@ -134,91 +105,162 @@ Critical: 17-25 (Red)
 
 let currentDemoStep = 0;
 
-function updateDemoUI(): void {
-  const step = demoSteps[currentDemoStep];
-  const stepContent = document.getElementById("demo-step-content");
-  const stepIndicator = document.getElementById("demo-step-indicator");
-  const progressBar = document.getElementById("demo-progress-bar");
-  const prevBtn = document.getElementById("demo-prev") as HTMLButtonElement;
-  const nextBtn = document.getElementById("demo-next") as HTMLButtonElement;
+// Initialize everything when DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize components
+  const complianceStatus = new ComplianceStatus("compliance-status-widget");
+  const auditTrail = new AuditTrail("audit-trail-widget");
+  const riskMatrix = new RiskMatrix("risk-matrix-widget");
+  const credentialViewer = new CredentialViewer("credential-viewer-widget");
+  const aboutDemo = new AboutDemo("about-content");
 
-  if (stepContent) {
-    stepContent.innerHTML = `<h4>${step.title}</h4>${step.content}`;
-  }
+  // Render all components
+  complianceStatus.render();
+  auditTrail.render();
+  riskMatrix.render();
+  credentialViewer.render();
+  aboutDemo.render();
+  initializeActivityList();
 
-  if (stepIndicator) {
-    stepIndicator.textContent = `${currentDemoStep + 1} / ${demoSteps.length}`;
-  }
+  // Navigation handling
+  const navButtons = document.querySelectorAll<HTMLButtonElement>(".nav-btn");
+  const views = document.querySelectorAll<HTMLElement>(".view");
 
-  if (progressBar) {
-    progressBar.style.width = `${((currentDemoStep + 1) / demoSteps.length) * 100}%`;
-  }
+  navButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetView = btn.dataset.view;
 
-  if (prevBtn) {
-    prevBtn.disabled = currentDemoStep === 0;
-  }
+      // Update active button
+      navButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
 
-  if (nextBtn) {
-    nextBtn.textContent = currentDemoStep === demoSteps.length - 1 ? "Finish" : "Next";
-  }
+      // Show target view
+      views.forEach((view) => {
+        view.classList.remove("active");
+        if (view.id === `${targetView}-view`) {
+          view.classList.add("active");
+        }
+      });
+    });
+  });
 
-  // Highlight corresponding view if specified
-  if (step.highlight) {
-    const targetBtn = document.querySelector(`[data-view="${step.highlight}"]`) as HTMLButtonElement;
-    if (targetBtn) {
-      targetBtn.click();
+  // Demo overlay functions
+  function updateDemoUI(): void {
+    const step = demoSteps[currentDemoStep];
+    const stepContent = document.getElementById("demo-step-content");
+    const stepIndicator = document.getElementById("demo-step-indicator");
+    const progressBar = document.getElementById("demo-progress-bar");
+    const prevBtn = document.getElementById("demo-prev") as HTMLButtonElement;
+    const nextBtn = document.getElementById("demo-next") as HTMLButtonElement;
+
+    if (stepContent) {
+      stepContent.innerHTML = `<h4>${step.title}</h4>${step.content}`;
+    }
+
+    if (stepIndicator) {
+      stepIndicator.textContent = `${currentDemoStep + 1} / ${demoSteps.length}`;
+    }
+
+    if (progressBar) {
+      progressBar.style.width = `${((currentDemoStep + 1) / demoSteps.length) * 100}%`;
+    }
+
+    if (prevBtn) {
+      prevBtn.disabled = currentDemoStep === 0;
+    }
+
+    if (nextBtn) {
+      nextBtn.textContent = currentDemoStep === demoSteps.length - 1 ? "Finish" : "Next";
+    }
+
+    // Highlight corresponding view if specified
+    if (step.highlight) {
+      const targetBtn = document.querySelector(`[data-view="${step.highlight}"]`) as HTMLButtonElement;
+      if (targetBtn) {
+        targetBtn.click();
+      }
     }
   }
-}
 
-function showDemoOverlay(): void {
-  const overlay = document.getElementById("demo-overlay");
-  if (overlay) {
-    overlay.classList.remove("hidden");
-    currentDemoStep = 0;
-    updateDemoUI();
+  function showDemoOverlay(): void {
+    const overlay = document.getElementById("demo-overlay");
+    if (overlay) {
+      overlay.classList.remove("hidden");
+      currentDemoStep = 0;
+      updateDemoUI();
+    }
   }
-}
 
-function hideDemoOverlay(): void {
-  const overlay = document.getElementById("demo-overlay");
-  if (overlay) {
-    overlay.classList.add("hidden");
+  function hideDemoOverlay(): void {
+    const overlay = document.getElementById("demo-overlay");
+    if (overlay) {
+      overlay.classList.add("hidden");
+    }
   }
-}
 
-// Demo controls
-document.getElementById("watch-demo-btn")?.addEventListener("click", showDemoOverlay);
-document.getElementById("demo-close")?.addEventListener("click", hideDemoOverlay);
+  // Demo controls
+  document.getElementById("watch-demo-btn")?.addEventListener("click", showDemoOverlay);
+  document.getElementById("demo-close")?.addEventListener("click", hideDemoOverlay);
 
-document.getElementById("demo-prev")?.addEventListener("click", () => {
-  if (currentDemoStep > 0) {
-    currentDemoStep--;
-    updateDemoUI();
-  }
-});
+  document.getElementById("demo-prev")?.addEventListener("click", () => {
+    if (currentDemoStep > 0) {
+      currentDemoStep--;
+      updateDemoUI();
+    }
+  });
 
-document.getElementById("demo-next")?.addEventListener("click", () => {
-  if (currentDemoStep < demoSteps.length - 1) {
-    currentDemoStep++;
-    updateDemoUI();
-  } else {
-    hideDemoOverlay();
-  }
-});
+  document.getElementById("demo-next")?.addEventListener("click", () => {
+    if (currentDemoStep < demoSteps.length - 1) {
+      currentDemoStep++;
+      updateDemoUI();
+    } else {
+      hideDemoOverlay();
+    }
+  });
 
-// Close demo on overlay click (outside container)
-document.getElementById("demo-overlay")?.addEventListener("click", (e) => {
-  if (e.target === e.currentTarget) {
-    hideDemoOverlay();
-  }
-});
+  // Close demo on overlay click (outside container)
+  document.getElementById("demo-overlay")?.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) {
+      hideDemoOverlay();
+    }
+  });
 
-// Close demo on Escape key
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    hideDemoOverlay();
-  }
+  // Close demo on Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      hideDemoOverlay();
+    }
+  });
+
+  // Audit controls
+  document.getElementById("audit-period")?.addEventListener("change", (e) => {
+    const period = (e.target as HTMLSelectElement).value;
+    auditTrail.filterByPeriod(period);
+  });
+
+  document.getElementById("audit-filter")?.addEventListener("change", (e) => {
+    const filter = (e.target as HTMLSelectElement).value;
+    auditTrail.filterByType(filter);
+  });
+
+  document.getElementById("export-audit")?.addEventListener("click", () => {
+    auditTrail.exportData();
+  });
+
+  // Risk controls
+  document.getElementById("risk-category")?.addEventListener("change", (e) => {
+    const category = (e.target as HTMLSelectElement).value;
+    riskMatrix.filterByCategory(category);
+  });
+
+  // Console branding
+  console.log(
+    "%c Aegis Compliance Platform %c v1.0.0 ",
+    "background: #00d4aa; color: #0a0a0b; font-weight: bold; padding: 4px 8px; border-radius: 4px 0 0 4px;",
+    "background: #1a1a1d; color: #00d4aa; padding: 4px 8px; border-radius: 0 4px 4px 0;"
+  );
+  console.log("Built by Daniel Ojeda | AI Enabler");
+  console.log("https://github.com/dojedaro/aegis");
 });
 
 // Initialize activity list with sample data
@@ -248,42 +290,3 @@ function initializeActivityList(): void {
     )
     .join("");
 }
-
-// Audit controls
-document.getElementById("audit-period")?.addEventListener("change", (e) => {
-  const period = (e.target as HTMLSelectElement).value;
-  auditTrail.filterByPeriod(period);
-});
-
-document.getElementById("audit-filter")?.addEventListener("change", (e) => {
-  const filter = (e.target as HTMLSelectElement).value;
-  auditTrail.filterByType(filter);
-});
-
-document.getElementById("export-audit")?.addEventListener("click", () => {
-  auditTrail.exportData();
-});
-
-// Risk controls
-document.getElementById("risk-category")?.addEventListener("change", (e) => {
-  const category = (e.target as HTMLSelectElement).value;
-  riskMatrix.filterByCategory(category);
-});
-
-// Initialize all components
-document.addEventListener("DOMContentLoaded", () => {
-  complianceStatus.render();
-  auditTrail.render();
-  riskMatrix.render();
-  credentialViewer.render();
-  aboutDemo.render();
-  initializeActivityList();
-
-  console.log(
-    "%c Aegis Compliance Platform %c v1.0.0 ",
-    "background: #00d4aa; color: #0a0a0b; font-weight: bold; padding: 4px 8px; border-radius: 4px 0 0 4px;",
-    "background: #1a1a1d; color: #00d4aa; padding: 4px 8px; border-radius: 0 4px 4px 0;"
-  );
-  console.log("Built by Daniel Ojeda | AI Enabler");
-  console.log("https://github.com/dojedaro");
-});

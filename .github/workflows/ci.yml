@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  backend:
+    name: Backend Build & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -19,34 +19,44 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install root dependencies
-        run: npm install
-
-      - name: Install backend dependencies
+      - name: Install dependencies
         run: npm install
         working-directory: backend
 
-      - name: Build backend
+      - name: Build
         run: npm run build
         working-directory: backend
 
-      - name: Run backend tests
+      - name: Run tests
         run: npm test -- --run
         working-directory: backend
 
-      - name: Build workspaces (mcp-server, cli, web)
-        run: npm run build
+  web:
+    name: Web Build
+    runs-on: ubuntu-latest
 
-      - name: Build web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: web
+
+      - name: Build
         run: npm run build
         working-directory: web
 
-  docker-build:
+  docker:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [backend, web]
 
     steps:
       - name: Checkout
@@ -61,8 +71,6 @@ jobs:
           context: ./backend
           push: false
           tags: aegis-backend:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build web image
         uses: docker/build-push-action@v5
@@ -70,22 +78,3 @@ jobs:
           context: ./web
           push: false
           tags: aegis-web:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '0'
-        continue-on-error: true

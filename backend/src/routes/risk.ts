@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { query, run, get } from "../db/schema.js";
@@ -14,7 +14,7 @@ export function createRiskRouter(claudeService: ClaudeService): Router {
   const router = Router();
 
   // GET /api/risk - List risk assessments
-  router.get("/", (req, res) => {
+  router.get("/", (req: Request, res: Response) => {
     const { level, entity_type, page = "1", limit = "20" } = req.query;
 
     let filters = [];
@@ -39,7 +39,7 @@ export function createRiskRouter(claudeService: ClaudeService): Router {
   });
 
   // POST /api/risk/assess - Run risk assessment
-  router.post("/assess", async (req, res) => {
+  router.post("/assess", async (req: Request, res: Response) => {
     try {
       const data = RiskAssessmentSchema.parse(req.body);
 
@@ -91,8 +91,8 @@ export function createRiskRouter(claudeService: ClaudeService): Router {
   });
 
   // GET /api/risk/:id - Get specific assessment
-  router.get("/:id", (req, res) => {
-    const assessment = get("SELECT * FROM risk_assessments WHERE id = ?", [req.params.id]) as any;
+  router.get("/:id", (req: Request, res: Response) => {
+    const assessment = get("SELECT * FROM risk_assessments WHERE id = ?", [req.params.id as string]) as any;
 
     if (!assessment) {
       return res.status(404).json({ error: "Risk assessment not found" });
@@ -106,10 +106,10 @@ export function createRiskRouter(claudeService: ClaudeService): Router {
   });
 
   // GET /api/risk/entity/:entityId - Get assessments for entity
-  router.get("/entity/:entityId", (req, res) => {
+  router.get("/entity/:entityId", (req: Request, res: Response) => {
     const assessments = query(
       `SELECT * FROM risk_assessments WHERE entity_id = ? ORDER BY assessed_at DESC`,
-      [req.params.entityId]
+      [req.params.entityId as string]
     );
 
     const parsed = assessments.map((a: any) => ({
@@ -122,7 +122,7 @@ export function createRiskRouter(claudeService: ClaudeService): Router {
   });
 
   // GET /api/risk/matrix - Get risk matrix data
-  router.get("/actions/matrix", (req, res) => {
+  router.get("/actions/matrix", (req: Request, res: Response) => {
     const distribution = query<{ risk_level: string; count: number }>(
       `SELECT risk_level, COUNT(*) as count FROM risk_assessments GROUP BY risk_level`
     );

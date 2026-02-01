@@ -3,93 +3,49 @@ name: Deploy
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 jobs:
-  deploy-web:
-    name: Deploy Web to Vercel
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: web
-
-      - name: Build
-        run: npm run build
-        working-directory: web
-
-      - name: Deploy to Vercel
-        run: |
-          cd web
-          vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        continue-on-error: true
+  # Vercel handles deployment automatically via GitHub integration
+  # This workflow only creates releases when a new version tag is pushed
 
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Get version
-        id: version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Check if tag exists
-        id: check_tag
-        run: |
-          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
 
       - name: Create Release
-        if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: Release v${{ steps.version.outputs.version }}
+          name: Release ${{ github.ref_name }}
           body: |
-            ## Aegis v${{ steps.version.outputs.version }}
+            ## Aegis ${{ github.ref_name }}
+
+            ### Live Deployments
+            - **Frontend:** https://aegis-web-xi.vercel.app
+            - **Backend API:** https://aegis-backend-ermb.onrender.com
+            - **API Docs:** https://aegis-backend-ermb.onrender.com/api-docs
 
             ### Features
             - AI-powered compliance checking with Claude API
-            - RAG-based regulation search
+            - RAG-based regulation search (27 articles)
             - Real-time PII detection
             - Risk assessment engine
             - Audit trail with immutable logging
+            - JWT authentication
 
-            ### Frameworks
+            ### Supported Frameworks
             - GDPR
             - eIDAS 2.0
             - AML/6AMLD
             - EU AI Act
 
-            See [README](https://github.com/dojedaro/aegis#readme) for full documentation.
+            See [README](https://github.com/dojedaro/aegis#readme) for documentation.
           draft: false
           prerelease: false
         env:

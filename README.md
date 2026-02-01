@@ -86,7 +86,7 @@ Aegis demonstrates how **AI agents can automate compliance workflows**:
 - **Credential Verification** — Validate W3C Verifiable Credentials
 - **Incident Response** — Guided compliance incident workflows
 - **PII Protection** — Automatic detection and blocking of sensitive data
-- **RAG-Powered Search** — Semantic search across 43 regulation articles with EUR-Lex links
+- **RAG-Powered Search** — Semantic search across 27 regulation articles with EUR-Lex links
 - **Real AI Integration** — Claude API for intelligent compliance analysis (optional)
 
 ---
@@ -395,25 +395,20 @@ npm run test:e2e:ui      # Interactive UI mode
 
 ---
 
-## 📸 Screenshots
+## 📸 Live Demo
 
 <div align="center">
 
-### Compliance Dashboard
-![Dashboard Overview](docs/screenshots/dashboard.png)
-*Real-time compliance status across GDPR, eIDAS 2.0, AML/KYC, and EU AI Act frameworks*
+**[View Live Demo →](https://aegis-web-xi.vercel.app)**
 
-### Risk Matrix
-![Risk Matrix](docs/screenshots/risk-matrix.png)
-*Interactive likelihood × impact visualization with drill-down capabilities*
+The live dashboard includes:
+- **Compliance Dashboard** — Real-time compliance status across GDPR, eIDAS 2.0, AML/KYC, and EU AI Act
+- **Risk Matrix** — Interactive likelihood × impact visualization
+- **Audit Trail** — Immutable compliance event log with filtering and export
+- **Credential Verification** — W3C Verifiable Credential validation
+- **Regulation Search** — RAG-powered Q&A about regulatory requirements
 
-### Audit Trail
-![Audit Trail](docs/screenshots/audit-trail.png)
-*Immutable compliance event log with filtering and export*
-
-### Credential Verification
-![Credential Verification](docs/screenshots/credentials.png)
-*W3C Verifiable Credential validation with eIDAS compliance mapping*
+**[Try the API →](https://aegis-backend-ermb.onrender.com/api-docs)**
 
 </div>
 

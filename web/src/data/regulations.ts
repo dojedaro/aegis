@@ -25,14 +25,14 @@ export const regulations: Framework[] = [
     name: "GDPR",
     fullName: "General Data Protection Regulation",
     description: "EU regulation on data protection and privacy, governing how personal data must be collected, processed, and stored.",
-    officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+    officialLink: "https://gdpr-info.eu/",
     articles: [
       {
         id: "gdpr-art-5",
         title: "Article 5 - Principles relating to processing",
         summary: "Personal data must be processed lawfully, fairly, and transparently. Data must be collected for specified purposes, be adequate and relevant, kept accurate, stored only as long as necessary, and processed securely.",
         relevance: "Core principles for all identity data processing. Every KYC operation must demonstrate compliance with these principles.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e1797-1-1",
+        officialLink: "https://gdpr-info.eu/art-5-gdpr/",
         keywords: ["lawfulness", "fairness", "transparency", "purpose limitation", "data minimization", "accuracy", "storage limitation", "integrity", "confidentiality"]
       },
       {
@@ -40,7 +40,7 @@ export const regulations: Framework[] = [
         title: "Article 6 - Lawfulness of processing",
         summary: "Processing is lawful only if: consent given, necessary for contract, legal obligation, vital interests, public interest, or legitimate interests. At least one legal basis must apply.",
         relevance: "KYC processing typically relies on legal obligation (AML requirements) or contract necessity. Must document the legal basis used.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e1888-1-1",
+        officialLink: "https://gdpr-info.eu/art-6-gdpr/",
         keywords: ["consent", "contract", "legal obligation", "legitimate interest", "lawful basis"]
       },
       {
@@ -48,7 +48,7 @@ export const regulations: Framework[] = [
         title: "Article 7 - Conditions for consent",
         summary: "Consent must be freely given, specific, informed, and unambiguous. Controller must demonstrate consent was given. Withdrawal must be as easy as giving consent.",
         relevance: "When using consent as legal basis for identity verification, these strict conditions apply. Consider if legal obligation is more appropriate.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e1963-1-1",
+        officialLink: "https://gdpr-info.eu/art-7-gdpr/",
         keywords: ["consent", "freely given", "specific", "informed", "unambiguous", "withdrawal"]
       },
       {
@@ -56,7 +56,7 @@ export const regulations: Framework[] = [
         title: "Article 9 - Processing of special categories",
         summary: "Processing of biometric data for identification, racial/ethnic origin, and other sensitive data is prohibited unless specific exceptions apply (explicit consent, legal obligation, etc.).",
         relevance: "Critical for biometric identity verification. Biometric data used for identification is a special category requiring explicit legal basis.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e2051-1-1",
+        officialLink: "https://gdpr-info.eu/art-9-gdpr/",
         keywords: ["biometric", "special category", "sensitive data", "explicit consent", "identification"]
       },
       {
@@ -64,7 +64,7 @@ export const regulations: Framework[] = [
         title: "Article 12 - Transparent information and communication",
         summary: "Information provided to data subjects must be concise, transparent, intelligible, easily accessible, and in clear plain language. Must facilitate exercise of data subject rights.",
         relevance: "Privacy notices for identity verification must be clear. Users must understand how their identity data is processed.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e2172-1-1",
+        officialLink: "https://gdpr-info.eu/art-12-gdpr/",
         keywords: ["transparency", "communication", "plain language", "accessible"]
       },
       {
@@ -72,7 +72,7 @@ export const regulations: Framework[] = [
         title: "Article 13 - Information when data collected from subject",
         summary: "When collecting personal data directly, must provide: controller identity, purposes, legal basis, recipients, retention period, data subject rights, and right to complain.",
         relevance: "At point of identity collection, users must receive comprehensive information about processing of their identity data.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e2245-1-1",
+        officialLink: "https://gdpr-info.eu/art-13-gdpr/",
         keywords: ["privacy notice", "data collection", "information rights", "transparency"]
       },
       {
@@ -80,7 +80,7 @@ export const regulations: Framework[] = [
         title: "Article 15 - Right of access",
         summary: "Data subjects have the right to obtain confirmation of processing and access to their personal data, including purposes, categories, recipients, retention, and source.",
         relevance: "Customers can request access to all identity data held about them. Systems must support data export.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e2513-1-1",
+        officialLink: "https://gdpr-info.eu/art-15-gdpr/",
         keywords: ["access right", "data subject request", "SAR", "data export"]
       },
       {
@@ -88,7 +88,7 @@ export const regulations: Framework[] = [
         title: "Article 17 - Right to erasure ('right to be forgotten')",
         summary: "Data subjects can request deletion when: data no longer necessary, consent withdrawn, objection to processing, unlawful processing, or legal obligation. Does not apply when processing required by law.",
         relevance: "Identity data may need to be retained for AML purposes even after erasure request. Document the legal basis for retention.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e2606-1-1",
+        officialLink: "https://gdpr-info.eu/art-17-gdpr/",
         keywords: ["erasure", "deletion", "right to be forgotten", "retention exception"]
       },
       {
@@ -96,7 +96,7 @@ export const regulations: Framework[] = [
         title: "Article 25 - Data protection by design and default",
         summary: "Controllers must implement technical and organizational measures to integrate data protection into processing. By default, only necessary personal data should be processed.",
         relevance: "Identity verification systems must be designed with privacy built-in. Collect minimum data needed for verification.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e3031-1-1",
+        officialLink: "https://gdpr-info.eu/art-25-gdpr/",
         keywords: ["privacy by design", "privacy by default", "data minimization", "technical measures"]
       },
       {
@@ -104,7 +104,7 @@ export const regulations: Framework[] = [
         title: "Article 30 - Records of processing activities",
         summary: "Controllers must maintain written records of processing activities including: purposes, data categories, recipients, transfers, retention periods, and security measures.",
         relevance: "Must maintain records of all identity data processing activities. Required for demonstrating compliance to regulators.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e3171-1-1",
+        officialLink: "https://gdpr-info.eu/art-30-gdpr/",
         keywords: ["records", "ROPA", "documentation", "processing activities"]
       },
       {
@@ -112,7 +112,7 @@ export const regulations: Framework[] = [
         title: "Article 32 - Security of processing",
         summary: "Implement appropriate technical and organizational measures: pseudonymization, encryption, confidentiality, integrity, availability, resilience, and regular testing.",
         relevance: "Identity data requires strong security measures. Encryption, access controls, and security testing are mandatory.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e3260-1-1",
+        officialLink: "https://gdpr-info.eu/art-32-gdpr/",
         keywords: ["security", "encryption", "pseudonymization", "confidentiality", "integrity"]
       },
       {
@@ -120,7 +120,7 @@ export const regulations: Framework[] = [
         title: "Article 33 - Notification of breach to supervisory authority",
         summary: "Personal data breaches must be notified to supervisory authority within 72 hours of awareness, unless unlikely to result in risk to individuals.",
         relevance: "Identity data breaches require rapid notification. Have breach response procedures ready for identity system incidents.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e3347-1-1",
+        officialLink: "https://gdpr-info.eu/art-33-gdpr/",
         keywords: ["breach notification", "72 hours", "supervisory authority", "incident response"]
       },
       {
@@ -128,7 +128,7 @@ export const regulations: Framework[] = [
         title: "Article 35 - Data protection impact assessment",
         summary: "DPIA required when processing likely results in high risk: systematic evaluation, large-scale special categories, systematic monitoring of public areas.",
         relevance: "Identity verification at scale likely requires DPIA. Biometric processing definitely requires impact assessment.",
-        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/oj#d1e3479-1-1",
+        officialLink: "https://gdpr-info.eu/art-35-gdpr/",
         keywords: ["DPIA", "impact assessment", "high risk", "systematic evaluation"]
       }
     ]

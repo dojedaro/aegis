@@ -37,6 +37,23 @@ Aegis is a compliance-first development platform designed to assist organization
   - Sanctions list screening
 - **Risk Categories**: Low, Medium, High, Prohibited
 
+### EU AI Act (Artificial Intelligence Act)
+- **Scope**: EU regulation on artificial intelligence systems
+- **Key Requirements**:
+  - Risk-based classification of AI systems (Unacceptable, High, Limited, Minimal)
+  - Prohibited AI practices (social scoring, real-time biometric identification)
+  - High-risk AI system requirements (Art. 6-51)
+  - Human oversight obligations (Art. 14)
+  - Transparency requirements (Art. 13)
+  - Data governance and quality (Art. 10)
+  - Technical documentation (Art. 11)
+  - Conformity assessment procedures
+- **Identity/KYC Relevance**:
+  - Biometric identification systems are high-risk (Annex III)
+  - Remote identity verification requires transparency
+  - Automated decision-making needs human oversight
+  - AI-assisted KYC must meet data quality standards
+
 ## Security Protocols
 
 ### Data Handling Rules
@@ -104,7 +121,7 @@ Aegis is a compliance-first development platform designed to assist organization
 
 ### Commit Messages
 - Include compliance impact: `[COMPLIANCE]` tag for compliance-affecting changes
-- Reference regulations: `[GDPR]`, `[AML]`, `[eIDAS]` as applicable
+- Reference regulations: `[GDPR]`, `[AML]`, `[eIDAS]`, `[EU-AI-ACT]` as applicable
 
 ### Code Review Checklist
 - [ ] No hardcoded PII or credentials

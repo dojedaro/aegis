@@ -2,6 +2,7 @@ import { ComplianceStatus } from "./components/ComplianceStatus.js";
 import { AuditTrail } from "./components/AuditTrail.js";
 import { RiskMatrix } from "./components/RiskMatrix.js";
 import { CredentialViewer } from "./components/CredentialViewer.js";
+import { RegulationsLibrary } from "./components/RegulationsLibrary.js";
 import { AboutDemo } from "./components/AboutDemo.js";
 
 // Demo walkthrough functionality
@@ -112,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const auditTrail = new AuditTrail("audit-trail-widget");
   const riskMatrix = new RiskMatrix("risk-matrix-widget");
   const credentialViewer = new CredentialViewer("credential-viewer-widget");
+  const regulationsLibrary = new RegulationsLibrary("regulations-content");
   const aboutDemo = new AboutDemo("about-content");
 
   // Render all components
@@ -119,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
   auditTrail.render();
   riskMatrix.render();
   credentialViewer.render();
+  regulationsLibrary.render();
   aboutDemo.render();
   initializeActivityList();
 

@@ -37,7 +37,7 @@ Aegis demonstrates how **AI agents can automate compliance workflows**:
 | 4-8 hours per review | **< 30 seconds** |
 | Manual checklist verification | **Automated pattern analysis** |
 | Reactive audit preparation | **Continuous compliance monitoring** |
-| Single-framework expertise | **Multi-regulation coverage** (GDPR, eIDAS, AML) |
+| Single-framework expertise | **Multi-regulation coverage** (GDPR, eIDAS, AML, EU AI Act) |
 
 ### How It Works
 
@@ -70,14 +70,14 @@ Aegis demonstrates how **AI agents can automate compliance workflows**:
 
 | Agent | Expertise |
 |-------|-----------|
-| **Regulatory Analyst** | Multi-jurisdiction compliance (GDPR, eIDAS, AML) |
+| **Regulatory Analyst** | Multi-jurisdiction compliance (GDPR, eIDAS, AML, EU AI Act) |
 | **Risk Assessor** | Likelihood × impact scoring, EDD recommendations |
 | **Audit Documenter** | Audit-ready report generation |
 | **Security Reviewer** | Privacy impact, vulnerability analysis |
 
 ### Compliance Capabilities
 
-- **Regulatory Checking** — Analyze code against GDPR, eIDAS 2.0, AML/KYC
+- **Regulatory Checking** — Analyze code against GDPR, eIDAS 2.0, AML/KYC, EU AI Act
 - **Risk Assessment** — Score entities using standard risk matrices
 - **Audit Trail** — Immutable logging for regulatory evidence
 - **Credential Verification** — Validate W3C Verifiable Credentials
@@ -266,7 +266,7 @@ Regulatory Implications:
 
 ### Compliance Dashboard
 ![Dashboard Overview](docs/screenshots/dashboard.png)
-*Real-time compliance status across GDPR, eIDAS 2.0, and AML/KYC frameworks*
+*Real-time compliance status across GDPR, eIDAS 2.0, AML/KYC, and EU AI Act frameworks*
 
 ### Risk Matrix
 ![Risk Matrix](docs/screenshots/risk-matrix.png)

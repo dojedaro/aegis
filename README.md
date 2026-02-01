@@ -11,6 +11,8 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://aegis-web-xi.vercel.app/)
+[![CI](https://img.shields.io/github/actions/workflow/status/dojedaro/aegis/ci.yml?style=flat-square&label=CI)](https://github.com/dojedaro/aegis/actions)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/dojedaro/aegis#docker)
 
 [**Live Demo**](https://aegis-web-xi.vercel.app/) • [Why This Matters](#-why-this-matters) • [Features](#features) • [Architecture](#architecture) • [Quick Start](#quick-start)
 
@@ -83,6 +85,8 @@ Aegis demonstrates how **AI agents can automate compliance workflows**:
 - **Credential Verification** — Validate W3C Verifiable Credentials
 - **Incident Response** — Guided compliance incident workflows
 - **PII Protection** — Automatic detection and blocking of sensitive data
+- **RAG-Powered Search** — Semantic search across 43 regulation articles with EUR-Lex links
+- **Real AI Integration** — Claude API for intelligent compliance analysis (optional)
 
 ---
 
@@ -147,6 +151,19 @@ cd web && npm run dev
 cd cli && npm run demo
 ```
 
+**Backend API:**
+```bash
+cd backend && npm install && npm run dev
+# API running at http://localhost:3001
+```
+
+**Docker (Full Stack):**
+```bash
+docker-compose up -d
+# Web: http://localhost:5173
+# API: http://localhost:3001
+```
+
 **Claude Code Skills:**
 ```bash
 cd aegis
@@ -192,8 +209,21 @@ aegis/
 │   ├── audit-documenter.md
 │   └── security-reviewer.md
 │
+├── backend/                 # Express API with SQLite
+│   ├── src/
+│   │   ├── routes/          # REST API endpoints
+│   │   ├── services/        # Claude AI, RAG services
+│   │   └── db/              # SQLite schema & migrations
+│   ├── tests/               # Vitest unit tests
+│   └── Dockerfile           # Production container
+│
 ├── cli/                     # Interactive CLI
 ├── web/                     # Dashboard UI
+│   ├── e2e/                 # Playwright e2e tests
+│   └── Dockerfile           # Production container
+│
+├── .github/workflows/       # CI/CD pipelines
+├── docker-compose.yml       # Full stack deployment
 └── examples/                # Sample data & workflows
 ```
 
@@ -256,6 +286,78 @@ Overall: 14/25 — HIGH RISK
 Regulatory Implications:
 → AML: Apply Enhanced Due Diligence
 → Monitoring: Monthly transaction review required
+```
+
+---
+
+## 🔌 Backend API
+
+The backend provides a REST API with real Claude AI integration.
+
+### Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/audit` | GET/POST | Audit trail management |
+| `/api/compliance/check` | POST | Run compliance analysis |
+| `/api/risk/assess` | POST | Risk assessment with scoring |
+| `/api/credentials/verify` | POST | Verify W3C credentials |
+| `/api/pii/scan` | POST | Scan for PII patterns |
+| `/api/pii/redact` | POST | Redact PII from content |
+| `/api/regulations/search` | POST | Semantic search across regulations |
+| `/api/regulations/query` | POST | RAG-powered Q&A about regulations |
+
+### AI Features (Optional)
+
+Set `ANTHROPIC_API_KEY` environment variable to enable:
+- Intelligent compliance analysis
+- AI-powered PII detection
+- RAG-based regulation Q&A
+
+Without API key, the system uses rule-based fallbacks with demo responses.
+
+```bash
+# .env
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+---
+
+## 🐳 Docker
+
+Run the full stack with Docker:
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+Services:
+- **aegis-web** - Dashboard on port 5173
+- **aegis-backend** - API on port 3001
+
+---
+
+## 🧪 Testing
+
+### Backend Tests (Vitest)
+```bash
+cd backend
+npm test                 # Run tests
+npm run test:coverage    # With coverage report
+```
+
+### E2E Tests (Playwright)
+```bash
+cd web
+npm run test:e2e         # Run e2e tests
+npm run test:e2e:ui      # Interactive UI mode
 ```
 
 ---

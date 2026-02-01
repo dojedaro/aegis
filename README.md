@@ -17,6 +17,8 @@
 
 [**Live Demo**](https://aegis-web-xi.vercel.app/) • [Why This Matters](#-why-this-matters) • [Features](#features) • [Architecture](#architecture) • [Quick Start](#quick-start)
 
+> **Note:** First API request may take ~30 seconds to initialize (free tier cold start)
+
 </div>
 
 ---

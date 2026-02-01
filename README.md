@@ -11,6 +11,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://aegis-web-xi.vercel.app/)
+[![Live API](https://img.shields.io/badge/Live%20API-Render-46E3B7?style=flat-square&logo=render)](https://aegis-backend-ermb.onrender.com/api-docs)
 [![CI](https://img.shields.io/github/actions/workflow/status/dojedaro/aegis/ci.yml?style=flat-square&label=CI)](https://github.com/dojedaro/aegis/actions)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/dojedaro/aegis#docker)
 
@@ -151,11 +152,16 @@ cd web && npm run dev
 cd cli && npm run demo
 ```
 
-**Backend API:**
+**Backend API (Local):**
 ```bash
 cd backend && npm install && npm run dev
 # API running at http://localhost:3001
 ```
+
+**Live Deployments (No Setup Required):**
+- **Frontend:** https://aegis-web-xi.vercel.app
+- **Backend API:** https://aegis-backend-ermb.onrender.com
+- **API Docs:** https://aegis-backend-ermb.onrender.com/api-docs
 
 **Docker (Full Stack):**
 ```bash
@@ -429,7 +435,9 @@ The `examples/` folder contains realistic synthetic data for testing:
 
 ## 🔗 Links
 
-- **Live Demo:** https://aegis-web-xi.vercel.app/
+- **Live Demo (Frontend):** https://aegis-web-xi.vercel.app/
+- **Live API (Backend):** https://aegis-backend-ermb.onrender.com
+- **API Documentation:** https://aegis-backend-ermb.onrender.com/api-docs
 - **GitHub:** https://github.com/dojedaro/aegis
 - **LinkedIn:** https://www.linkedin.com/in/dojedaro
 

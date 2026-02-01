@@ -1,0 +1,108 @@
+{
+  "customers": [
+    {
+      "id": "C-12345",
+      "type": "individual",
+      "name": "Maria Garcia",
+      "status": "verified",
+      "riskLevel": "medium",
+      "jurisdiction": "DE",
+      "nationality": "ES",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "verifiedAt": "2024-01-15T10:50:00Z",
+      "cddLevel": "standard",
+      "pepStatus": "clear",
+      "sanctionsStatus": "clear"
+    },
+    {
+      "id": "C-12346",
+      "type": "individual",
+      "name": "Hans Mueller",
+      "status": "verified",
+      "riskLevel": "low",
+      "jurisdiction": "DE",
+      "nationality": "DE",
+      "createdAt": "2024-01-10T09:15:00Z",
+      "verifiedAt": "2024-01-10T09:45:00Z",
+      "cddLevel": "standard",
+      "pepStatus": "clear",
+      "sanctionsStatus": "clear"
+    },
+    {
+      "id": "C-12347",
+      "type": "corporate",
+      "name": "TechStart GmbH",
+      "status": "verified",
+      "riskLevel": "medium",
+      "jurisdiction": "DE",
+      "registrationCountry": "DE",
+      "createdAt": "2024-01-12T14:20:00Z",
+      "verifiedAt": "2024-01-12T16:30:00Z",
+      "cddLevel": "standard",
+      "pepStatus": "clear",
+      "sanctionsStatus": "clear",
+      "beneficialOwners": [
+        { "name": "Anna Schmidt", "ownership": 60, "verified": true },
+        { "name": "Peter Weber", "ownership": 40, "verified": true }
+      ]
+    },
+    {
+      "id": "C-12348",
+      "type": "individual",
+      "name": "Jean Dupont",
+      "status": "pending_verification",
+      "riskLevel": "high",
+      "jurisdiction": "FR",
+      "nationality": "FR",
+      "createdAt": "2024-01-16T11:00:00Z",
+      "cddLevel": "enhanced",
+      "pepStatus": "potential_match",
+      "sanctionsStatus": "clear",
+      "eddTriggers": ["pep_exposure", "high_value_transactions"]
+    },
+    {
+      "id": "C-12349",
+      "type": "individual",
+      "name": "Sofia Rossi",
+      "status": "verified",
+      "riskLevel": "low",
+      "jurisdiction": "IT",
+      "nationality": "IT",
+      "createdAt": "2024-01-08T08:00:00Z",
+      "verifiedAt": "2024-01-08T08:30:00Z",
+      "cddLevel": "simplified",
+      "pepStatus": "clear",
+      "sanctionsStatus": "clear"
+    },
+    {
+      "id": "C-12350",
+      "type": "corporate",
+      "name": "Nordic Finance AB",
+      "status": "under_review",
+      "riskLevel": "high",
+      "jurisdiction": "SE",
+      "registrationCountry": "SE",
+      "createdAt": "2024-01-14T13:45:00Z",
+      "cddLevel": "enhanced",
+      "pepStatus": "clear",
+      "sanctionsStatus": "clear",
+      "eddTriggers": ["complex_ownership", "high_risk_industry"],
+      "beneficialOwners": [
+        { "name": "Erik Johansson", "ownership": 25, "verified": true },
+        { "name": "Offshore Holdings Ltd", "ownership": 75, "verified": false }
+      ]
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "verified": 3,
+    "pending": 2,
+    "underReview": 1,
+    "riskDistribution": {
+      "low": 2,
+      "medium": 2,
+      "high": 2
+    },
+    "eddRequired": 2
+  }
+}

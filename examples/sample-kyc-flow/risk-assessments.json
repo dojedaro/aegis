@@ -1,0 +1,221 @@
+{
+  "riskAssessments": [
+    {
+      "id": "RA-001",
+      "entityId": "C-12345",
+      "entityType": "customer",
+      "entityName": "Maria Garcia",
+      "assessedAt": "2024-01-15T10:50:00Z",
+      "assessor": "system",
+      "overallScore": 8,
+      "maxScore": 25,
+      "riskLevel": "medium",
+      "factors": [
+        {
+          "name": "Geographic Risk",
+          "category": "compliance",
+          "likelihood": 2,
+          "impact": 3,
+          "score": 6,
+          "level": "medium",
+          "notes": "EU resident, low-risk jurisdiction (DE)"
+        },
+        {
+          "name": "Document Verification",
+          "category": "operational",
+          "likelihood": 1,
+          "impact": 4,
+          "score": 4,
+          "level": "low",
+          "notes": "All documents verified successfully"
+        },
+        {
+          "name": "Transaction Volume",
+          "category": "financial",
+          "likelihood": 3,
+          "impact": 3,
+          "score": 9,
+          "level": "medium",
+          "notes": "Expected moderate transaction volume"
+        }
+      ],
+      "cddLevel": "standard",
+      "eddRequired": false,
+      "recommendations": [
+        "Standard monitoring procedures apply",
+        "Quarterly review cycle recommended"
+      ],
+      "nextReviewDate": "2024-04-15"
+    },
+    {
+      "id": "RA-002",
+      "entityId": "C-12348",
+      "entityType": "customer",
+      "entityName": "Jean Dupont",
+      "assessedAt": "2024-01-16T13:50:00Z",
+      "assessor": "analyst-1",
+      "overallScore": 18,
+      "maxScore": 25,
+      "riskLevel": "high",
+      "factors": [
+        {
+          "name": "PEP Exposure",
+          "category": "compliance",
+          "likelihood": 4,
+          "impact": 5,
+          "score": 20,
+          "level": "critical",
+          "notes": "Potential match to politically exposed person database"
+        },
+        {
+          "name": "Transaction Patterns",
+          "category": "financial",
+          "likelihood": 3,
+          "impact": 4,
+          "score": 12,
+          "level": "high",
+          "notes": "Large cross-border transfers expected"
+        },
+        {
+          "name": "Source of Wealth",
+          "category": "compliance",
+          "likelihood": 3,
+          "impact": 4,
+          "score": 12,
+          "level": "high",
+          "notes": "Requires additional documentation"
+        }
+      ],
+      "cddLevel": "enhanced",
+      "eddRequired": true,
+      "eddTriggers": ["pep_exposure", "high_value_transactions"],
+      "recommendations": [
+        "Apply Enhanced Due Diligence procedures",
+        "Obtain source of wealth documentation",
+        "Senior management approval required",
+        "Monthly transaction monitoring",
+        "Annual review mandatory"
+      ],
+      "nextReviewDate": "2024-02-16"
+    },
+    {
+      "id": "RA-003",
+      "entityId": "C-12350",
+      "entityType": "corporate",
+      "entityName": "Nordic Finance AB",
+      "assessedAt": "2024-01-14T15:00:00Z",
+      "assessor": "analyst-2",
+      "overallScore": 16,
+      "maxScore": 25,
+      "riskLevel": "high",
+      "factors": [
+        {
+          "name": "Ownership Structure",
+          "category": "compliance",
+          "likelihood": 4,
+          "impact": 4,
+          "score": 16,
+          "level": "high",
+          "notes": "Complex ownership with offshore entity (75%)"
+        },
+        {
+          "name": "Industry Risk",
+          "category": "compliance",
+          "likelihood": 3,
+          "impact": 4,
+          "score": 12,
+          "level": "high",
+          "notes": "Financial services sector - higher inherent risk"
+        },
+        {
+          "name": "Beneficial Owner Verification",
+          "category": "operational",
+          "likelihood": 4,
+          "impact": 4,
+          "score": 16,
+          "level": "high",
+          "notes": "Offshore holding UBO not yet verified"
+        }
+      ],
+      "cddLevel": "enhanced",
+      "eddRequired": true,
+      "eddTriggers": ["complex_ownership", "high_risk_industry", "unverified_ubo"],
+      "recommendations": [
+        "Complete UBO verification for offshore entity",
+        "Obtain corporate structure documentation",
+        "Verify source of funds for business activities",
+        "Quarterly monitoring of beneficial ownership changes",
+        "Board-level approval required for onboarding"
+      ],
+      "nextReviewDate": "2024-02-14"
+    },
+    {
+      "id": "RA-004",
+      "entityId": "C-12349",
+      "entityType": "customer",
+      "entityName": "Sofia Rossi",
+      "assessedAt": "2024-01-08T08:25:00Z",
+      "assessor": "system",
+      "overallScore": 4,
+      "maxScore": 25,
+      "riskLevel": "low",
+      "factors": [
+        {
+          "name": "Geographic Risk",
+          "category": "compliance",
+          "likelihood": 1,
+          "impact": 2,
+          "score": 2,
+          "level": "low",
+          "notes": "EU resident, low-risk jurisdiction (IT)"
+        },
+        {
+          "name": "Transaction Profile",
+          "category": "financial",
+          "likelihood": 1,
+          "impact": 2,
+          "score": 2,
+          "level": "low",
+          "notes": "Standard retail customer, low volume expected"
+        },
+        {
+          "name": "Customer Profile",
+          "category": "operational",
+          "likelihood": 1,
+          "impact": 2,
+          "score": 2,
+          "level": "low",
+          "notes": "Clear screening results, complete documentation"
+        }
+      ],
+      "cddLevel": "simplified",
+      "eddRequired": false,
+      "recommendations": [
+        "Simplified due diligence appropriate",
+        "Annual review sufficient"
+      ],
+      "nextReviewDate": "2025-01-08"
+    }
+  ],
+  "riskMatrix": {
+    "description": "Likelihood (1-5) × Impact (1-5) = Risk Score",
+    "levels": {
+      "low": { "min": 1, "max": 6, "color": "#22c55e" },
+      "medium": { "min": 7, "max": 12, "color": "#f59e0b" },
+      "high": { "min": 13, "max": 19, "color": "#f97316" },
+      "critical": { "min": 20, "max": 25, "color": "#ef4444" }
+    },
+    "categories": ["compliance", "operational", "financial", "reputational"]
+  },
+  "summary": {
+    "totalAssessments": 4,
+    "byRiskLevel": {
+      "low": 1,
+      "medium": 1,
+      "high": 2
+    },
+    "eddRequired": 2,
+    "averageScore": 11.5,
+    "upcomingReviews": 3
+  }
+}

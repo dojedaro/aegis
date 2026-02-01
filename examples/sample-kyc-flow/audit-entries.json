@@ -1,0 +1,157 @@
+{
+  "auditEntries": [
+    {
+      "id": "AUD-001",
+      "timestamp": "2024-01-16T14:30:00Z",
+      "action": "compliance_check",
+      "actor": "analyst-1",
+      "target": "src/services/payment.ts",
+      "result": "passed",
+      "frameworks": ["GDPR", "AML"],
+      "findings": 0,
+      "duration": 2.3
+    },
+    {
+      "id": "AUD-002",
+      "timestamp": "2024-01-16T14:25:00Z",
+      "action": "pii_scan",
+      "actor": "hook:pii-scanner",
+      "target": "config/database.json",
+      "result": "blocked",
+      "reason": "SSN pattern detected",
+      "severity": "critical"
+    },
+    {
+      "id": "AUD-003",
+      "timestamp": "2024-01-16T14:20:00Z",
+      "action": "risk_assessment",
+      "actor": "system",
+      "target": "customer:C-12348",
+      "result": "completed",
+      "riskScore": 18,
+      "riskLevel": "high",
+      "eddTriggered": true
+    },
+    {
+      "id": "AUD-004",
+      "timestamp": "2024-01-16T14:15:00Z",
+      "action": "credential_verify",
+      "actor": "analyst-2",
+      "target": "credential:VC-789",
+      "result": "passed",
+      "issuer": "did:web:government.eu",
+      "credentialType": "IdentityCredential"
+    },
+    {
+      "id": "AUD-005",
+      "timestamp": "2024-01-16T14:10:00Z",
+      "action": "compliance_check",
+      "actor": "analyst-1",
+      "target": "src/api/customer.ts",
+      "result": "needs_review",
+      "frameworks": ["GDPR", "eIDAS"],
+      "findings": 2,
+      "findingSeverities": ["medium", "low"]
+    },
+    {
+      "id": "AUD-006",
+      "timestamp": "2024-01-16T14:05:00Z",
+      "action": "customer_onboarding",
+      "actor": "system",
+      "target": "customer:C-12350",
+      "result": "pending",
+      "cddLevel": "enhanced",
+      "documentsSubmitted": 3
+    },
+    {
+      "id": "AUD-007",
+      "timestamp": "2024-01-16T14:00:00Z",
+      "action": "sanctions_screening",
+      "actor": "system",
+      "target": "customer:C-12348",
+      "result": "clear",
+      "listsChecked": ["OFAC", "EU", "UN", "UK"],
+      "matchesFound": 0
+    },
+    {
+      "id": "AUD-008",
+      "timestamp": "2024-01-16T13:55:00Z",
+      "action": "pep_screening",
+      "actor": "system",
+      "target": "customer:C-12348",
+      "result": "potential_match",
+      "matchConfidence": 0.72,
+      "requiresManualReview": true
+    },
+    {
+      "id": "AUD-009",
+      "timestamp": "2024-01-16T13:50:00Z",
+      "action": "document_verification",
+      "actor": "analyst-1",
+      "target": "document:DOC-456",
+      "result": "verified",
+      "documentType": "passport",
+      "issuingCountry": "FR"
+    },
+    {
+      "id": "AUD-010",
+      "timestamp": "2024-01-16T13:45:00Z",
+      "action": "git_commit",
+      "actor": "hook:compliance-gate",
+      "target": "commit:abc123",
+      "result": "allowed",
+      "filesScanned": 5,
+      "sensitiveDataFound": false
+    },
+    {
+      "id": "AUD-011",
+      "timestamp": "2024-01-16T13:40:00Z",
+      "action": "compliance_check",
+      "actor": "analyst-2",
+      "target": "src/utils/encryption.ts",
+      "result": "passed",
+      "frameworks": ["GDPR"],
+      "findings": 0,
+      "encryptionStandards": "AES-256"
+    },
+    {
+      "id": "AUD-012",
+      "timestamp": "2024-01-16T13:35:00Z",
+      "action": "data_access",
+      "actor": "analyst-1",
+      "target": "customer:C-12345",
+      "result": "logged",
+      "purpose": "customer_support",
+      "fieldsAccessed": ["name", "status", "riskLevel"]
+    }
+  ],
+  "summary": {
+    "totalEntries": 12,
+    "byResult": {
+      "passed": 4,
+      "blocked": 1,
+      "completed": 1,
+      "needs_review": 1,
+      "pending": 1,
+      "clear": 1,
+      "potential_match": 1,
+      "verified": 1,
+      "allowed": 1,
+      "logged": 1
+    },
+    "byAction": {
+      "compliance_check": 3,
+      "pii_scan": 1,
+      "risk_assessment": 1,
+      "credential_verify": 1,
+      "customer_onboarding": 1,
+      "sanctions_screening": 1,
+      "pep_screening": 1,
+      "document_verification": 1,
+      "git_commit": 1,
+      "data_access": 1
+    },
+    "criticalEvents": 1,
+    "requiresAttention": 3
+  }
+}

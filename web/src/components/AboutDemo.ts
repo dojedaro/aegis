@@ -224,8 +224,8 @@ export class AboutDemo {
           <a href="https://github.com/dojedaro/aegis" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="text-decoration: none;">
             View Source on GitHub
           </a>
-          <a href="https://github.com/dojedaro" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="text-decoration: none;">
-            More Projects
+          <a href="https://www.linkedin.com/in/dojedaro" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="text-decoration: none;">
+            Connect on LinkedIn
           </a>
         </div>
       </div>

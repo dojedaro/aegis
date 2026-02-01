@@ -260,10 +260,49 @@ Regulatory Implications:
 
 ---
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Compliance Dashboard
+![Dashboard Overview](docs/screenshots/dashboard.png)
+*Real-time compliance status across GDPR, eIDAS 2.0, and AML/KYC frameworks*
+
+### Risk Matrix
+![Risk Matrix](docs/screenshots/risk-matrix.png)
+*Interactive likelihood × impact visualization with drill-down capabilities*
+
+### Audit Trail
+![Audit Trail](docs/screenshots/audit-trail.png)
+*Immutable compliance event log with filtering and export*
+
+### Credential Verification
+![Credential Verification](docs/screenshots/credentials.png)
+*W3C Verifiable Credential validation with eIDAS compliance mapping*
+
+</div>
+
+---
+
+## 📁 Sample Data
+
+The `examples/` folder contains realistic synthetic data for testing:
+
+| File | Description |
+|------|-------------|
+| `customers.json` | 6 customer profiles (individuals & corporates) with varying risk levels |
+| `audit-entries.json` | 12 audit trail entries covering all operation types |
+| `credentials.json` | 5 W3C Verifiable Credentials (identity, address, education, employment) |
+| `risk-assessments.json` | 4 complete risk assessments with factor breakdowns |
+| `customer-data.json` | Full KYC flow example with documents and screening results |
+
+---
+
 ## 🔗 Links
 
 - **Live Demo:** https://aegis-web-xi.vercel.app/
 - **GitHub:** https://github.com/dojedaro/aegis
+- **LinkedIn:** https://www.linkedin.com/in/dojedaro
 
 ---
 
@@ -280,5 +319,6 @@ This project uses **synthetic data** for demonstration. "The Safe Company" is fi
 **AI Enabler** — Transforming complex workflows with intelligent automation
 
 [![GitHub](https://img.shields.io/badge/GitHub-dojedaro-181717?style=flat-square&logo=github)](https://github.com/dojedaro)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-dojedaro-0077B5?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/dojedaro)
 
 </div>

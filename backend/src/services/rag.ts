@@ -1,8 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { Database } from "better-sqlite3";
 import { createHash } from "crypto";
+import { get, run } from "../db/schema.js";
 
-// Regulation data structure
 interface Article {
   id: string;
   framework: string;
@@ -27,12 +26,10 @@ interface RAGResponse {
 
 export class RAGService {
   private client: Anthropic | null = null;
-  private db: Database;
   private articles: Article[] = [];
   private embeddings: Map<string, number[]> = new Map();
 
-  constructor(db: Database, apiKey?: string) {
-    this.db = db;
+  constructor(apiKey?: string) {
     if (apiKey) {
       this.client = new Anthropic({ apiKey });
     }
@@ -44,7 +41,6 @@ export class RAGService {
   }
 
   private loadRegulations(): void {
-    // Load the regulations data (same as web/src/data/regulations.ts)
     this.articles = [
       // GDPR Articles
       { id: "gdpr-art-5", framework: "gdpr", title: "Article 5 - Principles relating to processing of personal data", summary: "Personal data must be processed lawfully, fairly, and transparently. Data must be collected for specified, explicit purposes and be adequate, relevant, and limited to what is necessary.", relevance: "Core principle for KYC - only collect identity data that is strictly necessary for verification purposes.", keywords: ["lawfulness", "fairness", "transparency", "purpose limitation", "data minimization"], officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/art_5/oj" },
@@ -81,7 +77,6 @@ export class RAGService {
       { id: "ai-art-26", framework: "eu-ai-act", title: "Article 26 - Obligations of deployers of high-risk AI", summary: "Deployers must use AI in accordance with instructions, ensure human oversight, monitor operation, and keep logs.", relevance: "Operational requirements for organizations using AI in KYC.", keywords: ["deployer obligations", "monitoring", "logs", "compliance"], officialLink: "https://eur-lex.europa.eu/eli/reg/2024/1689/art_26/oj" },
     ];
 
-    // Initialize simple keyword-based "embeddings" (in production, use real embeddings)
     this.articles.forEach((article) => {
       const text = `${article.title} ${article.summary} ${article.relevance} ${article.keywords.join(" ")}`.toLowerCase();
       const embedding = this.createSimpleEmbedding(text);
@@ -89,13 +84,11 @@ export class RAGService {
     });
   }
 
-  // Simple TF-IDF-like embedding (in production, use Claude embeddings or a vector DB)
   private createSimpleEmbedding(text: string): number[] {
     const words = text.split(/\s+/);
     const wordFreq = new Map<string, number>();
     words.forEach((w) => wordFreq.set(w, (wordFreq.get(w) ?? 0) + 1));
 
-    // Important compliance terms
     const terms = [
       "gdpr", "eidas", "aml", "kyc", "pii", "biometric", "consent", "verification",
       "identity", "data", "processing", "risk", "compliance", "audit", "credential",
@@ -122,22 +115,18 @@ export class RAGService {
     const results: SearchResult[] = [];
 
     this.articles.forEach((article) => {
-      // Keyword matching score
       const keywordScore = article.keywords.filter((k) =>
         queryWords.some((qw) => k.toLowerCase().includes(qw) || qw.includes(k.toLowerCase()))
       ).length / article.keywords.length;
 
-      // Semantic (embedding) similarity
       const articleEmbedding = this.embeddings.get(article.id) ?? [];
       const semanticScore = this.cosineSimilarity(queryEmbedding, articleEmbedding);
 
-      // Title/summary text match
       const textMatch =
         (article.title.toLowerCase().includes(queryLower) ? 0.3 : 0) +
         (article.summary.toLowerCase().includes(queryLower) ? 0.2 : 0) +
         (article.relevance.toLowerCase().includes(queryLower) ? 0.2 : 0);
 
-      // Hybrid score
       const score = keywordScore * 0.3 + semanticScore * 0.4 + textMatch * 0.3;
 
       if (score > 0.1) {
@@ -149,35 +138,28 @@ export class RAGService {
       }
     });
 
-    return results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    return results.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
   async query(question: string): Promise<RAGResponse> {
-    // Search for relevant articles
     const searchResults = this.search(question, 5);
     const sources = searchResults.map((r) => r.article);
 
-    // Check cache
     const cacheKey = createHash("sha256").update(question).digest("hex");
-    const cachedStmt = this.db.prepare(`
-      SELECT response FROM ai_cache
-      WHERE cache_key = ? AND expires_at > datetime('now')
-    `);
-    const cached = cachedStmt.get(cacheKey) as { response: string } | undefined;
+    const cached = get<{ response: string }>(
+      `SELECT response FROM ai_cache WHERE cache_key = ? AND expires_at > datetime('now')`,
+      [cacheKey]
+    );
 
     if (cached) {
       return { answer: cached.response, sources, cached: true };
     }
 
-    // If no API key, return simple answer
     if (!this.client) {
       const answer = this.generateSimpleAnswer(question, sources);
       return { answer, sources, cached: false };
     }
 
-    // Use Claude to generate comprehensive answer
     const context = sources
       .map((s) => `[${s.framework.toUpperCase()} - ${s.title}]\n${s.summary}\nRelevance: ${s.relevance}`)
       .join("\n\n");
@@ -198,12 +180,10 @@ export class RAGService {
       const textContent = response.content.find((c) => c.type === "text");
       const answer = textContent?.text ?? this.generateSimpleAnswer(question, sources);
 
-      // Cache the response
-      const cacheStmt = this.db.prepare(`
-        INSERT OR REPLACE INTO ai_cache (cache_key, response, model, tokens_used, expires_at)
-        VALUES (?, ?, 'claude-sonnet-4-20250514', ?, datetime('now', '+1 hour'))
-      `);
-      cacheStmt.run(cacheKey, answer, response.usage.input_tokens + response.usage.output_tokens);
+      run(
+        `INSERT OR REPLACE INTO ai_cache (cache_key, response, model, tokens_used, expires_at) VALUES (?, ?, 'claude-sonnet-4-20250514', ?, datetime('now', '+1 hour'))`,
+        [cacheKey, answer, response.usage.input_tokens + response.usage.output_tokens]
+      );
 
       return { answer, sources, cached: false };
     } catch (error) {

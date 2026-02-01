@@ -1,7 +1,7 @@
 import { Router } from "express";
-import type { Database } from "better-sqlite3";
 import { randomUUID } from "crypto";
 import { z } from "zod";
+import { query, run, get } from "../db/schema.js";
 
 const CredentialSchema = z.object({
   type: z.string().min(1),
@@ -12,7 +12,7 @@ const CredentialSchema = z.object({
   credential_data: z.record(z.any()).optional(),
 });
 
-export function createCredentialsRouter(db: Database): Router {
+export function createCredentialsRouter(): Router {
   const router = Router();
 
   // GET /api/credentials - List credentials
@@ -26,14 +26,10 @@ export function createCredentialsRouter(db: Database): Router {
     const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    const stmt = db.prepare(`
-      SELECT * FROM credentials
-      ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `);
-
-    const credentials = stmt.all(parseInt(limit as string), offset);
+    const credentials = query(
+      `SELECT * FROM credentials ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [parseInt(limit as string), offset]
+    );
 
     res.json({ credentials });
   });
@@ -46,7 +42,6 @@ export function createCredentialsRouter(db: Database): Router {
       const id = randomUUID();
       const now = new Date();
 
-      // Perform verification checks
       const checks = {
         format: { passed: true, message: "Valid JSON-LD format" },
         issuer: { passed: true, message: `Issuer ${data.issuer} is trusted` },
@@ -65,34 +60,14 @@ export function createCredentialsRouter(db: Database): Router {
       const allPassed = Object.values(checks).every((c) => c.passed);
       const status = allPassed ? "valid" : data.expires_at && new Date(data.expires_at) <= now ? "expired" : "invalid";
 
-      // Store verification result
-      const stmt = db.prepare(`
-        INSERT INTO credentials (id, type, issuer, subject, issued_at, expires_at, status, verification_result, verified_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      stmt.run(
-        id,
-        data.type,
-        data.issuer,
-        data.subject,
-        data.issued_at,
-        data.expires_at ?? null,
-        status,
-        JSON.stringify(checks),
-        now.toISOString()
+      run(
+        `INSERT INTO credentials (id, type, issuer, subject, issued_at, expires_at, status, verification_result, verified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, data.type, data.issuer, data.subject, data.issued_at, data.expires_at ?? null, status, JSON.stringify(checks), now.toISOString()]
       );
 
-      // Log to audit trail
-      const auditStmt = db.prepare(`
-        INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant)
-        VALUES (?, ?, 'api', 'credential_verify', ?, ?, 1)
-      `);
-      auditStmt.run(
-        randomUUID(),
-        now.toISOString(),
-        `credential:${id}`,
-        status === "valid" ? "low" : "high"
+      run(
+        `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, 'api', 'credential_verify', ?, ?, 1)`,
+        [randomUUID(), now.toISOString(), `credential:${id}`, status === "valid" ? "low" : "high"]
       );
 
       res.status(201).json({
@@ -120,8 +95,7 @@ export function createCredentialsRouter(db: Database): Router {
 
   // GET /api/credentials/:id - Get specific credential
   router.get("/:id", (req, res) => {
-    const stmt = db.prepare("SELECT * FROM credentials WHERE id = ?");
-    const credential = stmt.get(req.params.id) as any;
+    const credential = get("SELECT * FROM credentials WHERE id = ?", [req.params.id]) as any;
 
     if (!credential) {
       return res.status(404).json({ error: "Credential not found" });

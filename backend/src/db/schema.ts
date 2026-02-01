@@ -1,18 +1,34 @@
-import Database from "better-sqlite3";
-import { fileURLToPath } from "url";
+import initSqlJs, { Database as SqlJsDatabase, SqlValue } from "sql.js";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = join(__dirname, "../../data");
+const DB_PATH = join(DATA_DIR, "aegis.db");
 
-export function initializeDatabase(): Database.Database {
-  const dbPath = join(__dirname, "../../data/aegis.db");
-  const db = new Database(dbPath);
+let db: SqlJsDatabase | null = null;
 
-  // Enable WAL mode for better concurrency
-  db.pragma("journal_mode = WAL");
+export async function initializeDatabase(): Promise<SqlJsDatabase> {
+  if (db) return db;
+
+  const SQL = await initSqlJs();
+
+  // Ensure data directory exists
+  if (!existsSync(DATA_DIR)) {
+    mkdirSync(DATA_DIR, { recursive: true });
+  }
+
+  // Load existing database or create new
+  if (existsSync(DB_PATH)) {
+    const buffer = readFileSync(DB_PATH);
+    db = new SQL.Database(buffer);
+  } else {
+    db = new SQL.Database();
+  }
 
   // Create tables
-  db.exec(`
+  db.run(`
     -- Audit Trail
     CREATE TABLE IF NOT EXISTS audit_entries (
       id TEXT PRIMARY KEY,
@@ -33,8 +49,8 @@ export function initializeDatabase(): Database.Database {
       entity_type TEXT NOT NULL,
       overall_score INTEGER NOT NULL,
       risk_level TEXT CHECK(risk_level IN ('low', 'medium', 'high', 'critical')),
-      factors TEXT NOT NULL, -- JSON array
-      recommendations TEXT, -- JSON array
+      factors TEXT NOT NULL,
+      recommendations TEXT,
       assessed_by TEXT NOT NULL,
       assessed_at TEXT NOT NULL,
       next_review TEXT,
@@ -46,9 +62,9 @@ export function initializeDatabase(): Database.Database {
       id TEXT PRIMARY KEY,
       target TEXT NOT NULL,
       target_type TEXT NOT NULL,
-      frameworks TEXT NOT NULL, -- JSON array of framework IDs
+      frameworks TEXT NOT NULL,
       status TEXT CHECK(status IN ('pending', 'running', 'completed', 'failed')),
-      results TEXT, -- JSON object with findings
+      results TEXT,
       score INTEGER,
       checked_by TEXT NOT NULL,
       started_at TEXT NOT NULL,
@@ -65,12 +81,12 @@ export function initializeDatabase(): Database.Database {
       issued_at TEXT NOT NULL,
       expires_at TEXT,
       status TEXT CHECK(status IN ('valid', 'expired', 'revoked', 'invalid')),
-      verification_result TEXT, -- JSON object
+      verification_result TEXT,
       verified_at TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
-    -- AI Analysis Cache (for demo mode and rate limiting)
+    -- AI Analysis Cache
     CREATE TABLE IF NOT EXISTS ai_cache (
       cache_key TEXT PRIMARY KEY,
       response TEXT NOT NULL,
@@ -80,7 +96,7 @@ export function initializeDatabase(): Database.Database {
       expires_at TEXT
     );
 
-    -- AI Usage Tracking (for safety/billing)
+    -- AI Usage Tracking
     CREATE TABLE IF NOT EXISTS ai_usage (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT NOT NULL,
@@ -90,17 +106,62 @@ export function initializeDatabase(): Database.Database {
       cost_usd REAL,
       created_at TEXT DEFAULT (datetime('now'))
     );
-
-    -- Create indexes
-    CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_entries(timestamp);
-    CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_entries(actor);
-    CREATE INDEX IF NOT EXISTS idx_audit_risk ON audit_entries(risk_level);
-    CREATE INDEX IF NOT EXISTS idx_risk_entity ON risk_assessments(entity_id);
-    CREATE INDEX IF NOT EXISTS idx_compliance_target ON compliance_checks(target);
-    CREATE INDEX IF NOT EXISTS idx_ai_usage_date ON ai_usage(date);
   `);
+
+  // Create indexes
+  db.run(`CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_entries(timestamp)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_entries(actor)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_audit_risk ON audit_entries(risk_level)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_risk_entity ON risk_assessments(entity_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_compliance_target ON compliance_checks(target)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_ai_usage_date ON ai_usage(date)`);
+
+  // Save to file
+  saveDatabase();
 
   return db;
 }
 
-export type { Database };
+export function saveDatabase(): void {
+  if (db) {
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    writeFileSync(DB_PATH, buffer);
+  }
+}
+
+export function getDatabase(): SqlJsDatabase {
+  if (!db) {
+    throw new Error("Database not initialized. Call initializeDatabase() first.");
+  }
+  return db;
+}
+
+// Helper to run a query and get results as objects
+export function query<T = Record<string, unknown>>(sql: string, params: SqlValue[] = []): T[] {
+  const database = getDatabase();
+  const stmt = database.prepare(sql);
+  stmt.bind(params);
+
+  const results: T[] = [];
+  while (stmt.step()) {
+    results.push(stmt.getAsObject() as T);
+  }
+  stmt.free();
+  return results;
+}
+
+// Helper to run a statement (INSERT, UPDATE, DELETE)
+export function run(sql: string, params: SqlValue[] = []): void {
+  const database = getDatabase();
+  database.run(sql, params);
+  saveDatabase();
+}
+
+// Helper to get a single row
+export function get<T = Record<string, unknown>>(sql: string, params: SqlValue[] = []): T | undefined {
+  const results = query<T>(sql, params);
+  return results[0];
+}
+
+export type { SqlJsDatabase as Database };

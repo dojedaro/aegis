@@ -1,16 +1,16 @@
 import { Router } from "express";
-import type { Database } from "better-sqlite3";
 import { randomUUID } from "crypto";
 import { z } from "zod";
+import { query, run, get } from "../db/schema.js";
 import { ClaudeService } from "../services/claude.js";
 
 const RiskAssessmentSchema = z.object({
   entity_id: z.string().min(1),
   entity_type: z.enum(["customer", "transaction", "process", "vendor"]),
-  data: z.record(z.any()).optional(), // Entity data for AI analysis
+  data: z.record(z.any()).optional(),
 });
 
-export function createRiskRouter(db: Database, claudeService: ClaudeService): Router {
+export function createRiskRouter(claudeService: ClaudeService): Router {
   const router = Router();
 
   // GET /api/risk - List risk assessments
@@ -24,16 +24,11 @@ export function createRiskRouter(db: Database, claudeService: ClaudeService): Ro
     const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    const stmt = db.prepare(`
-      SELECT * FROM risk_assessments
-      ${whereClause}
-      ORDER BY assessed_at DESC
-      LIMIT ? OFFSET ?
-    `);
+    const assessments = query(
+      `SELECT * FROM risk_assessments ${whereClause} ORDER BY assessed_at DESC LIMIT ? OFFSET ?`,
+      [parseInt(limit as string), offset]
+    );
 
-    const assessments = stmt.all(parseInt(limit as string), offset);
-
-    // Parse JSON fields
     const parsed = assessments.map((a: any) => ({
       ...a,
       factors: JSON.parse(a.factors),
@@ -51,7 +46,6 @@ export function createRiskRouter(db: Database, claudeService: ClaudeService): Ro
       let results: any;
 
       if (data.data && claudeService.isEnabled) {
-        // Use AI for analysis
         const analysis = await claudeService.assessRisk(JSON.stringify(data.data));
         try {
           results = JSON.parse(analysis.content);
@@ -59,39 +53,24 @@ export function createRiskRouter(db: Database, claudeService: ClaudeService): Ro
           results = getDefaultRiskAssessment(data.entity_type);
         }
       } else {
-        // Use default/demo assessment
         results = getDefaultRiskAssessment(data.entity_type);
       }
 
       const id = randomUUID();
       const assessedAt = new Date().toISOString();
 
-      const stmt = db.prepare(`
-        INSERT INTO risk_assessments (id, entity_id, entity_type, overall_score, risk_level, factors, recommendations, assessed_by, assessed_at, next_review)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'api', ?, ?)
-      `);
-
       const nextReview = new Date();
       nextReview.setMonth(nextReview.getMonth() + (results.level === "high" || results.level === "critical" ? 1 : 3));
 
-      stmt.run(
-        id,
-        data.entity_id,
-        data.entity_type,
-        results.score,
-        results.level,
-        JSON.stringify(results.factors),
-        JSON.stringify(results.recommendations),
-        assessedAt,
-        nextReview.toISOString()
+      run(
+        `INSERT INTO risk_assessments (id, entity_id, entity_type, overall_score, risk_level, factors, recommendations, assessed_by, assessed_at, next_review) VALUES (?, ?, ?, ?, ?, ?, ?, 'api', ?, ?)`,
+        [id, data.entity_id, data.entity_type, results.score, results.level, JSON.stringify(results.factors), JSON.stringify(results.recommendations), assessedAt, nextReview.toISOString()]
       );
 
-      // Log to audit trail
-      const auditStmt = db.prepare(`
-        INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant)
-        VALUES (?, ?, 'api', 'risk_assessment', ?, ?, 1)
-      `);
-      auditStmt.run(randomUUID(), assessedAt, `${data.entity_type}:${data.entity_id}`, results.level);
+      run(
+        `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, 'api', 'risk_assessment', ?, ?, 1)`,
+        [randomUUID(), assessedAt, `${data.entity_type}:${data.entity_id}`, results.level]
+      );
 
       res.status(201).json({
         id,
@@ -113,8 +92,7 @@ export function createRiskRouter(db: Database, claudeService: ClaudeService): Ro
 
   // GET /api/risk/:id - Get specific assessment
   router.get("/:id", (req, res) => {
-    const stmt = db.prepare("SELECT * FROM risk_assessments WHERE id = ?");
-    const assessment = stmt.get(req.params.id) as any;
+    const assessment = get("SELECT * FROM risk_assessments WHERE id = ?", [req.params.id]) as any;
 
     if (!assessment) {
       return res.status(404).json({ error: "Risk assessment not found" });
@@ -129,13 +107,10 @@ export function createRiskRouter(db: Database, claudeService: ClaudeService): Ro
 
   // GET /api/risk/entity/:entityId - Get assessments for entity
   router.get("/entity/:entityId", (req, res) => {
-    const stmt = db.prepare(`
-      SELECT * FROM risk_assessments
-      WHERE entity_id = ?
-      ORDER BY assessed_at DESC
-    `);
-
-    const assessments = stmt.all(req.params.entityId);
+    const assessments = query(
+      `SELECT * FROM risk_assessments WHERE entity_id = ? ORDER BY assessed_at DESC`,
+      [req.params.entityId]
+    );
 
     const parsed = assessments.map((a: any) => ({
       ...a,
@@ -148,24 +123,13 @@ export function createRiskRouter(db: Database, claudeService: ClaudeService): Ro
 
   // GET /api/risk/matrix - Get risk matrix data
   router.get("/actions/matrix", (req, res) => {
-    const stmt = db.prepare(`
-      SELECT risk_level, COUNT(*) as count
-      FROM risk_assessments
-      GROUP BY risk_level
-    `);
+    const distribution = query<{ risk_level: string; count: number }>(
+      `SELECT risk_level, COUNT(*) as count FROM risk_assessments GROUP BY risk_level`
+    );
 
-    const distribution = stmt.all() as { risk_level: string; count: number }[];
-
-    // Get recent high-risk items
-    const highRiskStmt = db.prepare(`
-      SELECT entity_id, entity_type, overall_score, risk_level, assessed_at
-      FROM risk_assessments
-      WHERE risk_level IN ('high', 'critical')
-      ORDER BY assessed_at DESC
-      LIMIT 10
-    `);
-
-    const highRiskItems = highRiskStmt.all();
+    const highRiskItems = query(
+      `SELECT entity_id, entity_type, overall_score, risk_level, assessed_at FROM risk_assessments WHERE risk_level IN ('high', 'critical') ORDER BY assessed_at DESC LIMIT 10`
+    );
 
     res.json({
       distribution: Object.fromEntries(distribution.map((d) => [d.risk_level, d.count])),

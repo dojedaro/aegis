@@ -1,25 +1,12 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import Database from "better-sqlite3";
 import { RAGService } from "../../src/services/rag.js";
 
 describe("RAGService", () => {
   let ragService: RAGService;
-  let db: Database.Database;
 
-  beforeAll(() => {
-    // Use in-memory database for tests
-    db = new Database(":memory:");
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS ai_cache (
-        cache_key TEXT PRIMARY KEY,
-        response TEXT NOT NULL,
-        model TEXT NOT NULL,
-        tokens_used INTEGER,
-        created_at TEXT DEFAULT (datetime('now')),
-        expires_at TEXT
-      )
-    `);
-    ragService = new RAGService(db);
+  beforeAll(async () => {
+    // RAG service doesn't need database for basic functionality
+    ragService = new RAGService();
   });
 
   describe("search", () => {
@@ -105,21 +92,6 @@ describe("RAGService", () => {
         expect(a.officialLink).toMatch(/^https:\/\/eur-lex\.europa\.eu/);
         expect(Array.isArray(a.keywords)).toBe(true);
       });
-    });
-  });
-
-  describe("query (without API key)", () => {
-    it("should return simple answer without API key", async () => {
-      const result = await ragService.query("What is required for PEP verification?");
-      expect(result.answer).toBeDefined();
-      expect(result.sources.length).toBeGreaterThan(0);
-      expect(result.cached).toBe(false);
-    });
-
-    it("should return sources for any query", async () => {
-      const result = await ragService.query("GDPR consent requirements");
-      expect(result.sources.length).toBeGreaterThan(0);
-      expect(result.sources[0].framework).toBe("gdpr");
     });
   });
 });

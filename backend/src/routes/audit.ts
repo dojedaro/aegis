@@ -1,7 +1,7 @@
 import { Router } from "express";
-import type { Database } from "better-sqlite3";
 import { randomUUID } from "crypto";
 import { z } from "zod";
+import { query, run, get } from "../db/schema.js";
 
 const AuditEntrySchema = z.object({
   actor: z.string().min(1),
@@ -12,7 +12,7 @@ const AuditEntrySchema = z.object({
   compliance_relevant: z.boolean().default(false),
 });
 
-export function createAuditRouter(db: Database): Router {
+export function createAuditRouter(): Router {
   const router = Router();
 
   // GET /api/audit - List audit entries
@@ -20,8 +20,6 @@ export function createAuditRouter(db: Database): Router {
     const { period = "week", filter = "all", page = "1", limit = "20" } = req.query;
 
     let dateFilter = "";
-    const now = new Date();
-
     switch (period) {
       case "today":
         dateFilter = `AND date(timestamp) = date('now')`;
@@ -48,19 +46,15 @@ export function createAuditRouter(db: Database): Router {
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    const countStmt = db.prepare(`
-      SELECT COUNT(*) as total FROM audit_entries WHERE 1=1 ${dateFilter} ${typeFilter}
-    `);
-    const { total } = countStmt.get() as { total: number };
+    const countResult = get<{ total: number }>(
+      `SELECT COUNT(*) as total FROM audit_entries WHERE 1=1 ${dateFilter} ${typeFilter}`
+    );
+    const total = countResult?.total ?? 0;
 
-    const stmt = db.prepare(`
-      SELECT * FROM audit_entries
-      WHERE 1=1 ${dateFilter} ${typeFilter}
-      ORDER BY timestamp DESC
-      LIMIT ? OFFSET ?
-    `);
-
-    const entries = stmt.all(parseInt(limit as string), offset);
+    const entries = query(
+      `SELECT * FROM audit_entries WHERE 1=1 ${dateFilter} ${typeFilter} ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+      [parseInt(limit as string), offset]
+    );
 
     res.json({
       entries,
@@ -78,23 +72,12 @@ export function createAuditRouter(db: Database): Router {
     try {
       const data = AuditEntrySchema.parse(req.body);
 
-      const stmt = db.prepare(`
-        INSERT INTO audit_entries (id, timestamp, actor, action, resource, details, risk_level, compliance_relevant)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
       const id = randomUUID();
       const timestamp = new Date().toISOString();
 
-      stmt.run(
-        id,
-        timestamp,
-        data.actor,
-        data.action,
-        data.resource,
-        data.details ?? null,
-        data.risk_level,
-        data.compliance_relevant ? 1 : 0
+      run(
+        `INSERT INTO audit_entries (id, timestamp, actor, action, resource, details, risk_level, compliance_relevant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, timestamp, data.actor, data.action, data.resource, data.details ?? null, data.risk_level, data.compliance_relevant ? 1 : 0]
       );
 
       res.status(201).json({ id, timestamp, ...data });
@@ -109,8 +92,7 @@ export function createAuditRouter(db: Database): Router {
 
   // GET /api/audit/:id - Get single entry
   router.get("/:id", (req, res) => {
-    const stmt = db.prepare("SELECT * FROM audit_entries WHERE id = ?");
-    const entry = stmt.get(req.params.id);
+    const entry = get("SELECT * FROM audit_entries WHERE id = ?", [req.params.id]);
 
     if (!entry) {
       return res.status(404).json({ error: "Audit entry not found" });
@@ -138,8 +120,7 @@ export function createAuditRouter(db: Database): Router {
         dateFilter = "";
     }
 
-    const stmt = db.prepare(`SELECT * FROM audit_entries ${dateFilter} ORDER BY timestamp DESC`);
-    const entries = stmt.all();
+    const entries = query(`SELECT * FROM audit_entries ${dateFilter} ORDER BY timestamp DESC`);
 
     if (format === "csv") {
       const headers = "id,timestamp,actor,action,resource,risk_level,compliance_relevant\n";

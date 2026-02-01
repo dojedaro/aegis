@@ -1,17 +1,17 @@
 import { Router } from "express";
-import type { Database } from "better-sqlite3";
 import { randomUUID } from "crypto";
 import { z } from "zod";
+import { query, run, get } from "../db/schema.js";
 import { ClaudeService } from "../services/claude.js";
 
 const ComplianceCheckSchema = z.object({
   target: z.string().min(1),
   target_type: z.enum(["file", "customer", "config", "process"]),
   frameworks: z.array(z.enum(["gdpr", "eidas", "aml", "eu-ai-act"])).min(1),
-  content: z.string().optional(), // Code or data to analyze
+  content: z.string().optional(),
 });
 
-export function createComplianceRouter(db: Database, claudeService: ClaudeService): Router {
+export function createComplianceRouter(claudeService: ClaudeService): Router {
   const router = Router();
 
   // GET /api/compliance - List compliance checks
@@ -25,16 +25,11 @@ export function createComplianceRouter(db: Database, claudeService: ClaudeServic
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    const stmt = db.prepare(`
-      SELECT * FROM compliance_checks
-      ${statusFilter}
-      ORDER BY started_at DESC
-      LIMIT ? OFFSET ?
-    `);
+    const checks = query(
+      `SELECT * FROM compliance_checks ${statusFilter} ORDER BY started_at DESC LIMIT ? OFFSET ?`,
+      [parseInt(limit as string), offset]
+    );
 
-    const checks = stmt.all(parseInt(limit as string), offset);
-
-    // Parse JSON fields
     const parsed = checks.map((c: any) => ({
       ...c,
       frameworks: JSON.parse(c.frameworks),
@@ -52,14 +47,11 @@ export function createComplianceRouter(db: Database, claudeService: ClaudeServic
       const id = randomUUID();
       const startedAt = new Date().toISOString();
 
-      // Insert pending check
-      const insertStmt = db.prepare(`
-        INSERT INTO compliance_checks (id, target, target_type, frameworks, status, checked_by, started_at)
-        VALUES (?, ?, ?, ?, 'running', 'api', ?)
-      `);
-      insertStmt.run(id, data.target, data.target_type, JSON.stringify(data.frameworks), startedAt);
+      run(
+        `INSERT INTO compliance_checks (id, target, target_type, frameworks, status, checked_by, started_at) VALUES (?, ?, ?, ?, 'running', 'api', ?)`,
+        [id, data.target, data.target_type, JSON.stringify(data.frameworks), startedAt]
+      );
 
-      // Run AI analysis if content provided
       let results: any = {};
       let score = 100;
 
@@ -73,7 +65,6 @@ export function createComplianceRouter(db: Database, claudeService: ClaudeServic
           results = { raw: analysis.content, cached: analysis.cached };
         }
       } else {
-        // Demo results
         results = {
           gdpr: { score: 92, findings: [] },
           eidas: { score: 87, findings: [{ id: "EIDAS-001", severity: "low", message: "Wallet integration pending" }] },
@@ -85,24 +76,14 @@ export function createComplianceRouter(db: Database, claudeService: ClaudeServic
         );
       }
 
-      // Update with results
-      const updateStmt = db.prepare(`
-        UPDATE compliance_checks
-        SET status = 'completed', results = ?, score = ?, completed_at = ?
-        WHERE id = ?
-      `);
-      updateStmt.run(JSON.stringify(results), score, new Date().toISOString(), id);
+      run(
+        `UPDATE compliance_checks SET status = 'completed', results = ?, score = ?, completed_at = ? WHERE id = ?`,
+        [JSON.stringify(results), score, new Date().toISOString(), id]
+      );
 
-      // Log to audit trail
-      const auditStmt = db.prepare(`
-        INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant)
-        VALUES (?, ?, 'api', 'compliance_check', ?, ?, 1)
-      `);
-      auditStmt.run(
-        randomUUID(),
-        new Date().toISOString(),
-        data.target,
-        score < 80 ? "high" : score < 90 ? "medium" : "low"
+      run(
+        `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, 'api', 'compliance_check', ?, ?, 1)`,
+        [randomUUID(), new Date().toISOString(), data.target, score < 80 ? "high" : score < 90 ? "medium" : "low"]
       );
 
       res.status(201).json({
@@ -127,8 +108,7 @@ export function createComplianceRouter(db: Database, claudeService: ClaudeServic
 
   // GET /api/compliance/:id - Get specific check
   router.get("/:id", (req, res) => {
-    const stmt = db.prepare("SELECT * FROM compliance_checks WHERE id = ?");
-    const check = stmt.get(req.params.id) as any;
+    const check = get("SELECT * FROM compliance_checks WHERE id = ?", [req.params.id]) as any;
 
     if (!check) {
       return res.status(404).json({ error: "Compliance check not found" });
@@ -143,7 +123,7 @@ export function createComplianceRouter(db: Database, claudeService: ClaudeServic
 
   // GET /api/compliance/stats - Get compliance statistics
   router.get("/actions/stats", (req, res) => {
-    const statsStmt = db.prepare(`
+    const stats = get<any>(`
       SELECT
         COUNT(*) as total_checks,
         AVG(score) as avg_score,
@@ -153,20 +133,11 @@ export function createComplianceRouter(db: Database, claudeService: ClaudeServic
       WHERE status = 'completed'
     `);
 
-    const stats = statsStmt.get() as any;
-
-    const frameworkStmt = db.prepare(`
-      SELECT frameworks, AVG(score) as avg_score, COUNT(*) as count
-      FROM compliance_checks
-      WHERE status = 'completed'
-      GROUP BY frameworks
-    `);
-
     res.json({
       overview: {
-        total_checks: stats.total_checks,
-        average_score: Math.round(stats.avg_score ?? 0),
-        passing_rate: stats.total_checks > 0 ? Math.round((stats.passing / stats.total_checks) * 100) : 0,
+        total_checks: stats?.total_checks ?? 0,
+        average_score: Math.round(stats?.avg_score ?? 0),
+        passing_rate: stats?.total_checks > 0 ? Math.round((stats.passing / stats.total_checks) * 100) : 0,
       },
       ai_enabled: claudeService.isEnabled,
     });

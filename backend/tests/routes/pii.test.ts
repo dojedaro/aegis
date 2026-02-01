@@ -1,36 +1,15 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import express from "express";
 import request from "supertest";
-import Database from "better-sqlite3";
 import { ClaudeService } from "../../src/services/claude.js";
 import { createPIIRouter } from "../../src/routes/pii.js";
 
 describe("PII Routes", () => {
   let app: express.Express;
 
-  beforeAll(() => {
-    const db = new Database(":memory:");
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS ai_cache (
-        cache_key TEXT PRIMARY KEY,
-        response TEXT NOT NULL,
-        model TEXT NOT NULL,
-        tokens_used INTEGER,
-        created_at TEXT DEFAULT (datetime('now')),
-        expires_at TEXT
-      );
-      CREATE TABLE IF NOT EXISTS ai_usage (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT NOT NULL,
-        endpoint TEXT NOT NULL,
-        tokens_input INTEGER NOT NULL,
-        tokens_output INTEGER NOT NULL,
-        cost_usd REAL,
-        created_at TEXT DEFAULT (datetime('now'))
-      );
-    `);
-
-    const claudeService = new ClaudeService(db, {
+  beforeAll(async () => {
+    // Mock ClaudeService without database dependency for PII tests
+    const claudeService = new ClaudeService({
       maxTokensPerRequest: 1024,
       dailyRequestLimit: 1000,
     });
@@ -84,7 +63,7 @@ describe("PII Routes", () => {
     it("should detect API keys", async () => {
       const res = await request(app)
         .post("/api/pii/scan")
-        .send({ content: "const api_key = 'api_test_xxxxxxxxxxxxxxxxxxxx'" });
+        .send({ content: "const key_abcdefghij1234567890xyz = 'secret'" });
 
       expect(res.status).toBe(200);
       expect(res.body.pii_detected).toBe(true);

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { Database } from "better-sqlite3";
+import { createHash } from "crypto";
+import { query, run, get } from "../db/schema.js";
 
 interface AIConfig {
   apiKey?: string;
@@ -16,10 +17,8 @@ interface AnalysisResult {
 export class ClaudeService {
   private client: Anthropic | null = null;
   private config: AIConfig;
-  private db: Database;
 
-  constructor(db: Database, config: AIConfig) {
-    this.db = db;
+  constructor(config: AIConfig) {
     this.config = config;
 
     if (config.apiKey) {
@@ -32,47 +31,40 @@ export class ClaudeService {
   }
 
   private getCacheKey(prompt: string, systemPrompt: string): string {
-    const crypto = require("crypto");
-    return crypto.createHash("sha256").update(`${systemPrompt}:${prompt}`).digest("hex");
+    return createHash("sha256").update(`${systemPrompt}:${prompt}`).digest("hex");
   }
 
   private getFromCache(cacheKey: string): string | null {
-    const stmt = this.db.prepare(`
-      SELECT response FROM ai_cache
-      WHERE cache_key = ? AND (expires_at IS NULL OR expires_at > datetime('now'))
-    `);
-    const row = stmt.get(cacheKey) as { response: string } | undefined;
+    const row = get<{ response: string }>(
+      `SELECT response FROM ai_cache WHERE cache_key = ? AND (expires_at IS NULL OR expires_at > datetime('now'))`,
+      [cacheKey]
+    );
     return row?.response ?? null;
   }
 
   private saveToCache(cacheKey: string, response: string, model: string, tokens: number): void {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO ai_cache (cache_key, response, model, tokens_used, expires_at)
-      VALUES (?, ?, ?, ?, datetime('now', '+1 day'))
-    `);
-    stmt.run(cacheKey, response, model, tokens);
+    run(
+      `INSERT OR REPLACE INTO ai_cache (cache_key, response, model, tokens_used, expires_at) VALUES (?, ?, ?, ?, datetime('now', '+1 day'))`,
+      [cacheKey, response, model, tokens]
+    );
   }
 
   private trackUsage(endpoint: string, tokensInput: number, tokensOutput: number): void {
     const date = new Date().toISOString().split("T")[0];
-    const costPerInputToken = 0.000003; // Claude Sonnet pricing estimate
+    const costPerInputToken = 0.000003;
     const costPerOutputToken = 0.000015;
     const cost = tokensInput * costPerInputToken + tokensOutput * costPerOutputToken;
 
-    const stmt = this.db.prepare(`
-      INSERT INTO ai_usage (date, endpoint, tokens_input, tokens_output, cost_usd)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    stmt.run(date, endpoint, tokensInput, tokensOutput, cost);
+    run(
+      `INSERT INTO ai_usage (date, endpoint, tokens_input, tokens_output, cost_usd) VALUES (?, ?, ?, ?, ?)`,
+      [date, endpoint, tokensInput, tokensOutput, cost]
+    );
   }
 
   private checkDailyLimit(): boolean {
     const date = new Date().toISOString().split("T")[0];
-    const stmt = this.db.prepare(`
-      SELECT COUNT(*) as count FROM ai_usage WHERE date = ?
-    `);
-    const row = stmt.get(date) as { count: number };
-    return row.count < this.config.dailyRequestLimit;
+    const row = get<{ count: number }>(`SELECT COUNT(*) as count FROM ai_usage WHERE date = ?`, [date]);
+    return (row?.count ?? 0) < this.config.dailyRequestLimit;
   }
 
   async analyzeCompliance(code: string, frameworks: string[]): Promise<AnalysisResult> {
@@ -100,18 +92,15 @@ Return JSON with: { "score": number (1-25), "level": "low"|"medium"|"high"|"crit
   private async analyze(content: string, systemPrompt: string, endpoint: string): Promise<AnalysisResult> {
     const cacheKey = this.getCacheKey(content, systemPrompt);
 
-    // Check cache first
     const cached = this.getFromCache(cacheKey);
     if (cached) {
       return { content: cached, cached: true };
     }
 
-    // If no API key, return demo response
     if (!this.client) {
       return this.getDemoResponse(endpoint);
     }
 
-    // Check daily limit
     if (!this.checkDailyLimit()) {
       console.warn("Daily AI request limit reached, using cached/demo response");
       return this.getDemoResponse(endpoint);
@@ -128,20 +117,9 @@ Return JSON with: { "score": number (1-25), "level": "low"|"medium"|"high"|"crit
       const textContent = response.content.find((c) => c.type === "text");
       const result = textContent?.text ?? "";
 
-      // Track usage
-      this.trackUsage(
-        endpoint,
-        response.usage.input_tokens,
-        response.usage.output_tokens
-      );
+      this.trackUsage(endpoint, response.usage.input_tokens, response.usage.output_tokens);
 
-      // Cache result
-      this.saveToCache(
-        cacheKey,
-        result,
-        "claude-sonnet-4-20250514",
-        response.usage.input_tokens + response.usage.output_tokens
-      );
+      this.saveToCache(cacheKey, result, "claude-sonnet-4-20250514", response.usage.input_tokens + response.usage.output_tokens);
 
       return {
         content: result,
@@ -195,16 +173,15 @@ Return JSON with: { "score": number (1-25), "level": "low"|"medium"|"high"|"crit
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
     const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-    const stmt = this.db.prepare(`
+    const row = get<{ today: number; week: number; month: number; cost: number }>(`
       SELECT
         SUM(CASE WHEN date = ? THEN 1 ELSE 0 END) as today,
         SUM(CASE WHEN date >= ? THEN 1 ELSE 0 END) as week,
         SUM(CASE WHEN date >= ? THEN 1 ELSE 0 END) as month,
         SUM(cost_usd) as cost
       FROM ai_usage
-    `);
+    `, [today, weekAgo, monthAgo]);
 
-    const row = stmt.get(today, weekAgo, monthAgo) as { today: number; week: number; month: number; cost: number };
-    return row;
+    return row ?? { today: 0, week: 0, month: 0, cost: 0 };
   }
 }

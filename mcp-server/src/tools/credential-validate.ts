@@ -236,7 +236,7 @@ export async function credentialValidate(args: unknown): Promise<ValidationResul
   // Check 7: Proof/Signature
   if (verifySignature) {
     const hasProof = !!credential.proof;
-    const hasValidProofStructure = hasProof && credential.proof?.type && credential.proof?.verificationMethod;
+    const hasValidProofStructure = !!(hasProof && credential.proof?.type && credential.proof?.verificationMethod);
 
     checks.push({
       name: "Proof",

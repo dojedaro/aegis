@@ -5,7 +5,7 @@ import rateLimit from "express-rate-limit";
 import { config } from "dotenv";
 import { randomUUID } from "crypto";
 
-import { initializeDatabase } from "./db/schema.js";
+import { initializeDatabase, get } from "./db/schema.js";
 import { ClaudeService } from "./services/claude.js";
 import { RAGService } from "./services/rag.js";
 import { createAuditRouter } from "./routes/audit.js";
@@ -99,6 +99,48 @@ async function main() {
     });
   });
 
+  /**
+   * @swagger
+   * /ready:
+   *   get:
+   *     summary: Kubernetes readiness probe
+   *     description: Returns 200 when the service is ready to accept traffic
+   *     tags: [Health]
+   *     responses:
+   *       200:
+   *         description: Service is ready
+   *       503:
+   *         description: Service is not ready
+   */
+  app.get("/ready", (req, res) => {
+    // Check if database is initialized
+    try {
+      const dbCheck = get("SELECT 1 as ok");
+      if (dbCheck) {
+        res.json({ ready: true, timestamp: new Date().toISOString() });
+      } else {
+        res.status(503).json({ ready: false, reason: "Database not available" });
+      }
+    } catch {
+      res.status(503).json({ ready: false, reason: "Database check failed" });
+    }
+  });
+
+  /**
+   * @swagger
+   * /live:
+   *   get:
+   *     summary: Kubernetes liveness probe
+   *     description: Returns 200 if the service is alive (basic health)
+   *     tags: [Health]
+   *     responses:
+   *       200:
+   *         description: Service is alive
+   */
+  app.get("/live", (req, res) => {
+    res.json({ alive: true, timestamp: new Date().toISOString() });
+  });
+
   // API info
   app.get("/api", (req, res) => {
     res.json({
@@ -142,6 +184,47 @@ async function main() {
     });
   });
 
+  /**
+   * @swagger
+   * /metrics:
+   *   get:
+   *     summary: Application metrics
+   *     description: Basic metrics for monitoring and observability
+   *     tags: [Health]
+   *     responses:
+   *       200:
+   *         description: Application metrics
+   */
+  app.get("/metrics", (req, res) => {
+    const auditStats = get<{ total: number; today: number }>(
+      `SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN date(timestamp) = date('now') THEN 1 ELSE 0 END) as today
+      FROM audit_entries`
+    );
+    const complianceStats = get<{ total: number; avg_score: number }>(
+      `SELECT COUNT(*) as total, AVG(score) as avg_score FROM compliance_checks WHERE status = 'completed'`
+    );
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      uptime_seconds: Math.floor(process.uptime()),
+      memory: {
+        used_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total_mb: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      },
+      database: {
+        audit_entries_total: auditStats?.total ?? 0,
+        audit_entries_today: auditStats?.today ?? 0,
+        compliance_checks_total: complianceStats?.total ?? 0,
+        compliance_avg_score: Math.round(complianceStats?.avg_score ?? 0),
+      },
+      ai: {
+        enabled: claudeService.isEnabled,
+      },
+    });
+  });
+
   // Error handling
   app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error("Error:", err.message);
@@ -165,25 +248,24 @@ async function main() {
 ║   Aegis Compliance API                                     ║
 ║   ────────────────────                                     ║
 ║                                                            ║
-║   Server running on http://localhost:${PORT}                  ║
-║   API Docs: http://localhost:${PORT}/api-docs                 ║
+║   Server: http://localhost:${PORT}                            ║
+║   Docs:   http://localhost:${PORT}/api-docs                   ║
 ║                                                            ║
 ║   AI Features: ${claudeService.isEnabled ? "Enabled ✓" : "Disabled (set ANTHROPIC_API_KEY)"}              ║
 ║                                                            ║
-║   Endpoints:                                               ║
+║   Health & Observability:                                  ║
 ║   • GET  /health           - Health check                  ║
-║   • GET  /api              - API information               ║
+║   • GET  /ready            - K8s readiness probe           ║
+║   • GET  /live             - K8s liveness probe            ║
+║   • GET  /metrics          - Application metrics           ║
 ║   • GET  /api-docs         - Swagger UI                    ║
-║   • GET  /api/audit        - List audit entries            ║
-║   • POST /api/audit        - Create audit entry            ║
+║                                                            ║
+║   Core Endpoints:                                          ║
+║   • POST /api/auth/login   - Get JWT token                 ║
 ║   • POST /api/compliance/check - Run compliance check      ║
 ║   • POST /api/risk/assess  - Run risk assessment           ║
-║   • POST /api/credentials/verify - Verify credential       ║
 ║   • POST /api/pii/scan     - Scan for PII                  ║
 ║   • POST /api/regulations/query - RAG Q&A                  ║
-║   • POST /api/regulations/search - Semantic search         ║
-║   • POST /api/auth/login   - Get JWT token                 ║
-║   • POST /api/auth/demo-token - Get demo token             ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
     `);

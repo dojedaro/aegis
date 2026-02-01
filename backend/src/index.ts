@@ -16,6 +16,8 @@ import { createCredentialsRouter } from "./routes/credentials.js";
 import { createPIIRouter } from "./routes/pii.js";
 import { createRegulationsRouter } from "./routes/regulations.js";
 import { optionalAuth } from "./middleware/auth.js";
+import { requestLogger } from "./middleware/logger.js";
+import { errorHandler } from "./middleware/errors.js";
 import { setupSwagger } from "./swagger.js";
 
 // Load environment variables
@@ -54,6 +56,9 @@ async function main() {
     (req as any).requestId = requestId;
     next();
   });
+
+  // Request logging
+  app.use(requestLogger);
 
   // Swagger API documentation
   setupSwagger(app);
@@ -225,19 +230,17 @@ async function main() {
     });
   });
 
-  // Error handling
-  app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error("Error:", err.message);
-    res.status(500).json({
-      error: "Internal server error",
-      message: process.env.NODE_ENV === "development" ? err.message : undefined,
+  // 404 handler
+  app.use((req, res) => {
+    res.status(404).json({
+      error: "Not found",
+      path: req.path,
+      request_id: (req as any).requestId,
     });
   });
 
-  // 404 handler
-  app.use((req, res) => {
-    res.status(404).json({ error: "Not found" });
-  });
+  // Error handling (must be last)
+  app.use(errorHandler);
 
   // Start server
   const PORT = parseInt(process.env.PORT ?? "3001");

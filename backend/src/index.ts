@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { initializeDatabase, get } from "./db/schema.js";
 import { ClaudeService } from "./services/claude.js";
 import { RAGService } from "./services/rag.js";
+import { ComplianceAgentService } from "./services/agent.js";
 import { createAuditRouter } from "./routes/audit.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createComplianceRouter } from "./routes/compliance.js";
@@ -35,6 +36,9 @@ async function main() {
   });
 
   const ragService = new RAGService(process.env.ANTHROPIC_API_KEY);
+
+  // Initialize agentic compliance service (uses tool-use for multi-step analysis)
+  const agentService = new ComplianceAgentService(process.env.ANTHROPIC_API_KEY);
 
   // Create Express app
   const app = express();
@@ -186,6 +190,80 @@ async function main() {
     res.json({
       enabled: true,
       usage: stats,
+    });
+  });
+
+  /**
+   * @swagger
+   * /api/agent/analyze:
+   *   post:
+   *     summary: Agentic compliance analysis
+   *     description: Multi-step AI analysis using tool-use for thorough compliance checking
+   *     tags: [Compliance]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [content, frameworks]
+   *             properties:
+   *               content: { type: string, description: Content to analyze }
+   *               frameworks: { type: array, items: { type: string } }
+   *               target_type: { type: string, default: config }
+   *     responses:
+   *       200:
+   *         description: Agentic analysis results
+   */
+  app.post("/api/agent/analyze", async (req, res) => {
+    const { content, frameworks = ["gdpr"], target_type = "config" } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ error: "Content is required" });
+    }
+
+    const result = await agentService.analyzeCompliance(content, frameworks, target_type);
+    res.json({
+      ...result,
+      agent_enabled: agentService.enabled,
+      mode: agentService.enabled ? "agentic" : "demo",
+    });
+  });
+
+  /**
+   * @swagger
+   * /api/agent/risk:
+   *   post:
+   *     summary: Agentic risk assessment
+   *     description: AI-powered multi-factor risk analysis
+   *     tags: [Risk]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [entity]
+   *             properties:
+   *               entity: { type: string }
+   *               entity_type: { type: string, default: customer }
+   *               context: { type: string }
+   *     responses:
+   *       200:
+   *         description: Risk assessment results
+   */
+  app.post("/api/agent/risk", async (req, res) => {
+    const { entity, entity_type = "customer", context } = req.body;
+
+    if (!entity) {
+      return res.status(400).json({ error: "Entity is required" });
+    }
+
+    const result = await agentService.assessRisk(entity, entity_type, context);
+    res.json({
+      ...result,
+      agent_enabled: agentService.enabled,
+      mode: agentService.enabled ? "agentic" : "demo",
     });
   });
 

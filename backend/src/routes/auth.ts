@@ -22,7 +22,31 @@ const DEMO_USERS: Record<string, { password: string; role: "admin" | "analyst" |
 export function createAuthRouter(): Router {
   const router = Router();
 
-  // POST /api/auth/login - Get access token
+  /**
+   * @swagger
+   * /api/auth/login:
+   *   post:
+   *     summary: Login and get access token
+   *     tags: [Auth]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/LoginRequest'
+   *           example:
+   *             email: "demo@safeco.com"
+   *             password: "demo"
+   *     responses:
+   *       200:
+   *         description: Login successful
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/LoginResponse'
+   *       401:
+   *         description: Invalid credentials
+   */
   router.post("/login", (req, res) => {
     try {
       const data = LoginSchema.parse(req.body);
@@ -66,7 +90,20 @@ export function createAuthRouter(): Router {
     }
   });
 
-  // POST /api/auth/demo-token - Get a demo token (for testing)
+  /**
+   * @swagger
+   * /api/auth/demo-token:
+   *   post:
+   *     summary: Get a demo token for testing
+   *     tags: [Auth]
+   *     responses:
+   *       200:
+   *         description: Demo token generated
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/LoginResponse'
+   */
   router.post("/demo-token", (req, res) => {
     const payload = {
       id: "demo-user-1",
@@ -85,7 +122,27 @@ export function createAuthRouter(): Router {
     });
   });
 
-  // GET /api/auth/me - Get current user info
+  /**
+   * @swagger
+   * /api/auth/me:
+   *   get:
+   *     summary: Get current user info
+   *     tags: [Auth]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Current user details
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 user:
+   *                   $ref: '#/components/schemas/User'
+   *       401:
+   *         description: Not authenticated
+   */
   router.get("/me", (req, res) => {
     const authHeader = req.headers.authorization;
 
@@ -103,7 +160,27 @@ export function createAuthRouter(): Router {
     }
   });
 
-  // POST /api/auth/refresh - Refresh token
+  /**
+   * @swagger
+   * /api/auth/refresh:
+   *   post:
+   *     summary: Refresh access token
+   *     tags: [Auth]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: New token generated
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 token: { type: string }
+   *                 expiresIn: { type: string }
+   *       401:
+   *         description: Invalid or expired token
+   */
   router.post("/refresh", (req, res) => {
     const authHeader = req.headers.authorization;
 

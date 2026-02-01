@@ -14,7 +14,32 @@ const SearchSchema = z.object({
 export function createRegulationsRouter(ragService: RAGService): Router {
   const router = Router();
 
-  // GET /api/regulations - List all frameworks
+  /**
+   * @swagger
+   * /api/regulations:
+   *   get:
+   *     summary: List regulatory frameworks
+   *     tags: [Regulations]
+   *     responses:
+   *       200:
+   *         description: Available regulatory frameworks
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 frameworks:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       id: { type: string }
+   *                       name: { type: string }
+   *                       description: { type: string }
+   *                       articleCount: { type: integer }
+   *                 total_articles: { type: integer }
+   *                 ai_enabled: { type: boolean }
+   */
   router.get("/", (req, res) => {
     const frameworks = ragService.getFrameworks();
     res.json({
@@ -38,7 +63,30 @@ export function createRegulationsRouter(ragService: RAGService): Router {
     res.json({ articles, count: articles.length });
   });
 
-  // POST /api/regulations/search - Semantic search
+  /**
+   * @swagger
+   * /api/regulations/search:
+   *   post:
+   *     summary: Semantic search across regulations
+   *     description: Search regulatory articles using keyword and semantic matching
+   *     tags: [Regulations]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [query]
+   *             properties:
+   *               query: { type: string, minLength: 2, maxLength: 200 }
+   *               limit: { type: integer, minimum: 1, maximum: 20, default: 5 }
+   *           example:
+   *             query: "data retention requirements"
+   *             limit: 5
+   *     responses:
+   *       200:
+   *         description: Search results with relevance scores
+   */
   router.post("/search", (req, res) => {
     try {
       const data = SearchSchema.parse(req.body);
@@ -62,7 +110,41 @@ export function createRegulationsRouter(ragService: RAGService): Router {
     }
   });
 
-  // POST /api/regulations/query - RAG query (AI-powered Q&A)
+  /**
+   * @swagger
+   * /api/regulations/query:
+   *   post:
+   *     summary: AI-powered regulatory Q&A (RAG)
+   *     description: Ask natural language questions about regulations. Uses retrieval-augmented generation to provide accurate, sourced answers.
+   *     tags: [Regulations]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [question]
+   *             properties:
+   *               question: { type: string, minLength: 3, maxLength: 500 }
+   *           example:
+   *             question: "What are the data retention requirements under GDPR?"
+   *     responses:
+   *       200:
+   *         description: AI-generated answer with regulatory sources
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 question: { type: string }
+   *                 answer: { type: string }
+   *                 sources:
+   *                   type: array
+   *                   items:
+   *                     $ref: '#/components/schemas/RegulationArticle'
+   *                 cached: { type: boolean }
+   *                 ai_enabled: { type: boolean }
+   */
   router.post("/query", async (req, res) => {
     try {
       const data = QuerySchema.parse(req.body);

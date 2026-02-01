@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { config } from "dotenv";
+import { randomUUID } from "crypto";
 
 import { initializeDatabase } from "./db/schema.js";
 import { ClaudeService } from "./services/claude.js";
@@ -15,6 +16,7 @@ import { createCredentialsRouter } from "./routes/credentials.js";
 import { createPIIRouter } from "./routes/pii.js";
 import { createRegulationsRouter } from "./routes/regulations.js";
 import { optionalAuth } from "./middleware/auth.js";
+import { setupSwagger } from "./swagger.js";
 
 // Load environment variables
 config();
@@ -45,6 +47,17 @@ async function main() {
   }));
   app.use(express.json({ limit: "1mb" }));
 
+  // Request correlation ID for tracing
+  app.use((req, res, next) => {
+    const requestId = (req.headers["x-request-id"] as string) || randomUUID();
+    res.setHeader("x-request-id", requestId);
+    (req as any).requestId = requestId;
+    next();
+  });
+
+  // Swagger API documentation
+  setupSwagger(app);
+
   // Rate limiting
   const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000"),
@@ -58,7 +71,25 @@ async function main() {
   // Optional auth - attaches user to request if token provided
   app.use(optionalAuth);
 
-  // Health check
+  /**
+   * @swagger
+   * /health:
+   *   get:
+   *     summary: Health check endpoint
+   *     tags: [Health]
+   *     responses:
+   *       200:
+   *         description: Service health status
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 status: { type: string, example: healthy }
+   *                 version: { type: string, example: "1.0.0" }
+   *                 timestamp: { type: string, format: date-time }
+   *                 ai_enabled: { type: boolean }
+   */
   app.get("/health", (req, res) => {
     res.json({
       status: "healthy",
@@ -135,12 +166,14 @@ async function main() {
 ║   ────────────────────                                     ║
 ║                                                            ║
 ║   Server running on http://localhost:${PORT}                  ║
+║   API Docs: http://localhost:${PORT}/api-docs                 ║
 ║                                                            ║
 ║   AI Features: ${claudeService.isEnabled ? "Enabled ✓" : "Disabled (set ANTHROPIC_API_KEY)"}              ║
 ║                                                            ║
 ║   Endpoints:                                               ║
 ║   • GET  /health           - Health check                  ║
 ║   • GET  /api              - API information               ║
+║   • GET  /api-docs         - Swagger UI                    ║
 ║   • GET  /api/audit        - List audit entries            ║
 ║   • POST /api/audit        - Create audit entry            ║
 ║   • POST /api/compliance/check - Run compliance check      ║

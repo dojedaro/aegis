@@ -294,10 +294,28 @@ Regulatory Implications:
 
 The backend provides a REST API with real Claude AI integration.
 
+### API Documentation
+
+Interactive API documentation is available via Swagger UI:
+
+```bash
+cd backend && npm run dev
+# Open http://localhost:3001/api-docs
+```
+
+Features:
+- **OpenAPI 3.0** specification with full schema definitions
+- **Interactive testing** - Try endpoints directly in the browser
+- **Authentication** - JWT Bearer token support
+- **Request correlation IDs** - Every request gets a unique `x-request-id` for tracing
+
 ### Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
+| `/api/auth/login` | POST | Get JWT access token |
+| `/api/auth/demo-token` | POST | Get demo token for testing |
+| `/api/auth/me` | GET | Get current user info |
 | `/api/audit` | GET/POST | Audit trail management |
 | `/api/compliance/check` | POST | Run compliance analysis |
 | `/api/risk/assess` | POST | Risk assessment with scoring |
@@ -306,6 +324,15 @@ The backend provides a REST API with real Claude AI integration.
 | `/api/pii/redact` | POST | Redact PII from content |
 | `/api/regulations/search` | POST | Semantic search across regulations |
 | `/api/regulations/query` | POST | RAG-powered Q&A about regulations |
+
+### Authentication
+
+Demo credentials for testing:
+```
+admin@safeco.com / admin123    (admin role)
+analyst@safeco.com / analyst123 (analyst role)
+demo@safeco.com / demo         (analyst role)
+```
 
 ### AI Features (Optional)
 

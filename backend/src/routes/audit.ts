@@ -15,7 +15,55 @@ const AuditEntrySchema = z.object({
 export function createAuditRouter(): Router {
   const router = Router();
 
-  // GET /api/audit - List audit entries
+  /**
+   * @swagger
+   * /api/audit:
+   *   get:
+   *     summary: List audit entries
+   *     tags: [Audit]
+   *     parameters:
+   *       - in: query
+   *         name: period
+   *         schema:
+   *           type: string
+   *           enum: [today, week, month, all]
+   *         description: Time period filter
+   *       - in: query
+   *         name: filter
+   *         schema:
+   *           type: string
+   *           enum: [all, compliance, high-risk]
+   *         description: Entry type filter
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           default: 20
+   *     responses:
+   *       200:
+   *         description: Paginated list of audit entries
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 entries:
+   *                   type: array
+   *                   items:
+   *                     $ref: '#/components/schemas/AuditEntry'
+   *                 pagination:
+   *                   type: object
+   *                   properties:
+   *                     page: { type: integer }
+   *                     limit: { type: integer }
+   *                     total: { type: integer }
+   *                     pages: { type: integer }
+   */
   router.get("/", (req, res) => {
     const { period = "week", filter = "all", page = "1", limit = "20" } = req.query;
 
@@ -67,7 +115,38 @@ export function createAuditRouter(): Router {
     });
   });
 
-  // POST /api/audit - Create audit entry
+  /**
+   * @swagger
+   * /api/audit:
+   *   post:
+   *     summary: Create audit entry
+   *     tags: [Audit]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [actor, action, resource, risk_level]
+   *             properties:
+   *               actor: { type: string }
+   *               action: { type: string }
+   *               resource: { type: string }
+   *               details: { type: string }
+   *               risk_level: { type: string, enum: [low, medium, high, critical] }
+   *               compliance_relevant: { type: boolean }
+   *     responses:
+   *       201:
+   *         description: Audit entry created
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/AuditEntry'
+   *       400:
+   *         description: Validation error
+   */
   router.post("/", (req, res) => {
     try {
       const data = AuditEntrySchema.parse(req.body);
@@ -90,7 +169,29 @@ export function createAuditRouter(): Router {
     }
   });
 
-  // GET /api/audit/:id - Get single entry
+  /**
+   * @swagger
+   * /api/audit/{id}:
+   *   get:
+   *     summary: Get single audit entry
+   *     tags: [Audit]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: uuid
+   *     responses:
+   *       200:
+   *         description: Audit entry details
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/AuditEntry'
+   *       404:
+   *         description: Entry not found
+   */
   router.get("/:id", (req, res) => {
     const entry = get("SELECT * FROM audit_entries WHERE id = ?", [req.params.id]);
 
@@ -101,7 +202,28 @@ export function createAuditRouter(): Router {
     res.json(entry);
   });
 
-  // GET /api/audit/export - Export audit trail
+  /**
+   * @swagger
+   * /api/audit/actions/export:
+   *   get:
+   *     summary: Export audit trail
+   *     tags: [Audit]
+   *     parameters:
+   *       - in: query
+   *         name: period
+   *         schema:
+   *           type: string
+   *           enum: [week, month, quarter, all]
+   *       - in: query
+   *         name: format
+   *         schema:
+   *           type: string
+   *           enum: [json, csv]
+   *           default: json
+   *     responses:
+   *       200:
+   *         description: Exported audit data
+   */
   router.get("/actions/export", (req, res) => {
     const { period = "month", format = "json" } = req.query;
 

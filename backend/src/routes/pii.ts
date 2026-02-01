@@ -22,7 +22,36 @@ const PII_PATTERNS = {
 export function createPIIRouter(claudeService: ClaudeService): Router {
   const router = Router();
 
-  // POST /api/pii/scan - Scan content for PII
+  /**
+   * @swagger
+   * /api/pii/scan:
+   *   post:
+   *     summary: Scan content for personally identifiable information
+   *     description: Uses rule-based patterns and optional AI analysis to detect PII
+   *     tags: [PII]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [content]
+   *             properties:
+   *               content: { type: string, description: Content to scan }
+   *               context: { type: string, enum: [code, document, message], default: code }
+   *           example:
+   *             content: "Contact john@example.com or call 555-123-4567"
+   *             context: "document"
+   *     responses:
+   *       200:
+   *         description: PII scan results
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/PIIResult'
+   *       400:
+   *         description: Validation error
+   */
   router.post("/scan", async (req, res) => {
     try {
       const data = PIIScanSchema.parse(req.body);
@@ -80,7 +109,35 @@ export function createPIIRouter(claudeService: ClaudeService): Router {
     }
   });
 
-  // POST /api/pii/redact - Redact PII from content
+  /**
+   * @swagger
+   * /api/pii/redact:
+   *   post:
+   *     summary: Redact PII from content
+   *     description: Replaces detected PII with placeholder tokens
+   *     tags: [PII]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [content]
+   *             properties:
+   *               content: { type: string }
+   *               context: { type: string, enum: [code, document, message] }
+   *     responses:
+   *       200:
+   *         description: Redacted content
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 redacted_content: { type: string }
+   *                 redactions: { type: array, items: { type: object } }
+   *                 total_redacted: { type: integer }
+   */
   router.post("/redact", (req, res) => {
     try {
       const data = PIIScanSchema.parse(req.body);

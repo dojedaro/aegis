@@ -14,7 +14,32 @@ const ComplianceCheckSchema = z.object({
 export function createComplianceRouter(claudeService: ClaudeService): Router {
   const router = Router();
 
-  // GET /api/compliance - List compliance checks
+  /**
+   * @swagger
+   * /api/compliance:
+   *   get:
+   *     summary: List compliance checks
+   *     tags: [Compliance]
+   *     parameters:
+   *       - in: query
+   *         name: status
+   *         schema:
+   *           type: string
+   *           enum: [running, completed, failed]
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           default: 20
+   *     responses:
+   *       200:
+   *         description: List of compliance checks
+   */
   router.get("/", (req, res) => {
     const { status, page = "1", limit = "20" } = req.query;
 
@@ -39,7 +64,44 @@ export function createComplianceRouter(claudeService: ClaudeService): Router {
     res.json({ checks: parsed });
   });
 
-  // POST /api/compliance/check - Run a compliance check
+  /**
+   * @swagger
+   * /api/compliance/check:
+   *   post:
+   *     summary: Run AI-powered compliance check
+   *     description: Analyzes target against specified regulatory frameworks using Claude AI
+   *     tags: [Compliance]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [target, target_type, frameworks]
+   *             properties:
+   *               target: { type: string, description: Target identifier }
+   *               target_type: { type: string, enum: [file, customer, config, process] }
+   *               frameworks:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                   enum: [gdpr, eidas, aml, eu-ai-act]
+   *               content: { type: string, description: Content to analyze }
+   *           example:
+   *             target: "kyc-workflow.json"
+   *             target_type: "config"
+   *             frameworks: ["gdpr", "aml"]
+   *             content: "{ 'verify_identity': true, 'store_documents': true }"
+   *     responses:
+   *       201:
+   *         description: Compliance check completed
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ComplianceResult'
+   *       400:
+   *         description: Validation error
+   */
   router.post("/check", async (req, res) => {
     try {
       const data = ComplianceCheckSchema.parse(req.body);

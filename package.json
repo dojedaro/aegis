@@ -1,0 +1,34 @@
+{
+  "name": "aegis",
+  "version": "1.0.0",
+  "description": "AI-Powered Compliance Operations Platform - Demonstrating Claude Code extensibility for KYC, AML, eIDAS 2.0, and verifiable credentials",
+  "private": true,
+  "workspaces": [
+    "mcp-server",
+    "cli",
+    "web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:mcp": "npm run build --workspace=mcp-server",
+    "build:cli": "npm run build --workspace=cli",
+    "build:web": "npm run build --workspace=web",
+    "dev:web": "npm run dev --workspace=web",
+    "demo": "npm run demo --workspace=cli",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "keywords": [
+    "compliance",
+    "kyc",
+    "aml",
+    "eidas",
+    "verifiable-credentials",
+    "mcp",
+    "claude-code"
+  ],
+  "author": "The Safe Company",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run test:*)",
+      "Bash(npx aegis *)",
+      "Bash(node hooks/*.js *)",
+      "Read(aegis/**)",
+      "Write(aegis/mcp-server/data/audit-trail.jsonl)"
+    ],
+    "deny": [
+      "Write(*.env)",
+      "Write(*credentials*)",
+      "Write(*secrets*)"
+    ]
+  },
+  "mcpServers": {
+    "aegis-compliance": {
+      "command": "node",
+      "args": ["mcp-server/dist/index.js"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

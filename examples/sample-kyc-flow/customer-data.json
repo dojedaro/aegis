@@ -1,0 +1,174 @@
+{
+  "customer": {
+    "id": "C-12345",
+    "type": "individual",
+    "status": "pending_verification",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "riskLevel": "medium"
+  },
+  "identity": {
+    "firstName": "Maria",
+    "lastName": "Garcia",
+    "dateOfBirth": "1990-05-15",
+    "nationality": "ES",
+    "countryOfResidence": "DE"
+  },
+  "documents": [
+    {
+      "type": "passport",
+      "documentNumber": "[REDACTED]",
+      "issuingCountry": "ES",
+      "expiryDate": "2028-03-20",
+      "verificationStatus": "verified",
+      "verifiedAt": "2024-01-15T10:35:00Z"
+    },
+    {
+      "type": "proof_of_address",
+      "documentType": "utility_bill",
+      "issueDate": "2024-01-01",
+      "verificationStatus": "verified",
+      "verifiedAt": "2024-01-15T10:40:00Z"
+    }
+  ],
+  "verifiableCredentials": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1"
+      ],
+      "type": ["VerifiableCredential", "IdentityCredential"],
+      "issuer": {
+        "id": "did:web:government.eu",
+        "name": "EU Government Identity Service"
+      },
+      "issuanceDate": "2024-01-15T10:35:00Z",
+      "expirationDate": "2025-01-15T10:35:00Z",
+      "credentialSubject": {
+        "id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "givenName": "Maria",
+        "familyName": "Garcia",
+        "birthDate": "1990-05-15",
+        "nationality": "ES"
+      },
+      "proof": {
+        "type": "Ed25519Signature2020",
+        "created": "2024-01-15T10:35:00Z",
+        "verificationMethod": "did:web:government.eu#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z5LgmVhjpSXB4SDrP2vC3j..."
+      }
+    }
+  ],
+  "screening": {
+    "pepCheck": {
+      "status": "clear",
+      "checkedAt": "2024-01-15T10:45:00Z",
+      "provider": "screening-provider"
+    },
+    "sanctionsCheck": {
+      "status": "clear",
+      "listsChecked": ["OFAC", "EU", "UN"],
+      "checkedAt": "2024-01-15T10:45:00Z"
+    },
+    "adverseMediaCheck": {
+      "status": "clear",
+      "checkedAt": "2024-01-15T10:45:00Z"
+    }
+  },
+  "riskAssessment": {
+    "overallScore": 8,
+    "riskLevel": "medium",
+    "assessedAt": "2024-01-15T10:50:00Z",
+    "factors": [
+      {
+        "name": "Geographic Risk",
+        "category": "compliance",
+        "likelihood": 2,
+        "impact": 3,
+        "score": 6,
+        "notes": "EU resident, low-risk jurisdiction"
+      },
+      {
+        "name": "Document Verification",
+        "category": "operational",
+        "likelihood": 1,
+        "impact": 4,
+        "score": 4,
+        "notes": "All documents verified successfully"
+      },
+      {
+        "name": "Transaction Volume",
+        "category": "financial",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "notes": "Expected moderate transaction volume"
+      }
+    ],
+    "recommendations": [
+      "Standard monitoring procedures apply",
+      "Quarterly review cycle recommended"
+    ]
+  },
+  "compliance": {
+    "gdpr": {
+      "consentObtained": true,
+      "consentDate": "2024-01-15T10:30:00Z",
+      "purposes": ["identity_verification", "aml_compliance", "service_provision"],
+      "dataRetentionPeriod": "5 years after relationship ends"
+    },
+    "aml": {
+      "cddCompleted": true,
+      "cddLevel": "standard",
+      "eddRequired": false,
+      "ongoingMonitoring": true
+    },
+    "eidas": {
+      "identityAssuranceLevel": "high",
+      "walletCompatible": true,
+      "crossBorderRecognition": true
+    }
+  },
+  "auditTrail": [
+    {
+      "action": "customer_created",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "actor": "system"
+    },
+    {
+      "action": "consent_obtained",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "actor": "customer"
+    },
+    {
+      "action": "document_submitted",
+      "timestamp": "2024-01-15T10:32:00Z",
+      "actor": "customer",
+      "details": "passport"
+    },
+    {
+      "action": "document_verified",
+      "timestamp": "2024-01-15T10:35:00Z",
+      "actor": "analyst-1",
+      "details": "passport verification completed"
+    },
+    {
+      "action": "credential_issued",
+      "timestamp": "2024-01-15T10:35:00Z",
+      "actor": "system",
+      "details": "IdentityCredential issued"
+    },
+    {
+      "action": "screening_completed",
+      "timestamp": "2024-01-15T10:45:00Z",
+      "actor": "system",
+      "details": "PEP, sanctions, adverse media - all clear"
+    },
+    {
+      "action": "risk_assessment_completed",
+      "timestamp": "2024-01-15T10:50:00Z",
+      "actor": "system",
+      "details": "Risk level: medium, score: 8/25"
+    }
+  ]
+}

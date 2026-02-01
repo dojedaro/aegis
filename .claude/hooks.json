@@ -1,0 +1,35 @@
+{
+  "hooks": [
+    {
+      "name": "pii-scanner",
+      "description": "Scans content for PII before file edits/writes",
+      "event": "PreToolCall",
+      "matcher": {
+        "tools": ["Edit", "Write"]
+      },
+      "command": "node hooks/pii-scanner.js",
+      "timeout": 10000
+    },
+    {
+      "name": "audit-logger",
+      "description": "Logs all tool operations to audit trail",
+      "event": "PostToolCall",
+      "matcher": {
+        "tools": ["*"]
+      },
+      "command": "node hooks/audit-logger.js",
+      "timeout": 5000
+    },
+    {
+      "name": "compliance-gate",
+      "description": "Validates compliance before git commits",
+      "event": "PreToolCall",
+      "matcher": {
+        "tools": ["Bash"],
+        "pattern": "git commit"
+      },
+      "command": "node hooks/compliance-gate.js",
+      "timeout": 15000
+    }
+  ]
+}

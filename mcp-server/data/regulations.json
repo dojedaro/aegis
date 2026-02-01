@@ -1,0 +1,194 @@
+{
+  "frameworks": {
+    "eidas2": {
+      "name": "eIDAS 2.0",
+      "fullName": "Electronic Identification and Trust Services Regulation 2.0",
+      "jurisdiction": "European Union",
+      "effectiveDate": "2024-05-20",
+      "requirements": [
+        {
+          "id": "EIDAS-001",
+          "category": "Identity Verification",
+          "requirement": "Electronic identification schemes must meet high level of assurance",
+          "description": "Identity proofing must use qualified trust services with face-to-face or equivalent remote verification",
+          "severity": "critical",
+          "controls": ["biometric_verification", "document_authenticity", "liveness_detection"]
+        },
+        {
+          "id": "EIDAS-002",
+          "category": "Digital Wallet",
+          "requirement": "European Digital Identity Wallet (EUDIW) interoperability",
+          "description": "Wallets must support standardized credential formats and cross-border recognition",
+          "severity": "critical",
+          "controls": ["w3c_vc_support", "cross_border_recognition", "selective_disclosure"]
+        },
+        {
+          "id": "EIDAS-003",
+          "category": "Trust Services",
+          "requirement": "Qualified electronic signatures must be recognized across member states",
+          "description": "QES must have legal equivalence to handwritten signatures",
+          "severity": "high",
+          "controls": ["qualified_signature", "timestamp_authority", "certificate_validation"]
+        },
+        {
+          "id": "EIDAS-004",
+          "category": "Data Minimization",
+          "requirement": "Selective attribute disclosure",
+          "description": "Users must be able to share only necessary attributes from credentials",
+          "severity": "high",
+          "controls": ["selective_disclosure", "zero_knowledge_proofs", "attribute_based_credentials"]
+        }
+      ]
+    },
+    "gdpr": {
+      "name": "GDPR",
+      "fullName": "General Data Protection Regulation",
+      "jurisdiction": "European Union",
+      "effectiveDate": "2018-05-25",
+      "requirements": [
+        {
+          "id": "GDPR-001",
+          "category": "Lawful Basis",
+          "requirement": "Valid legal basis for processing personal data",
+          "description": "Processing must have consent, contract, legal obligation, vital interests, public task, or legitimate interests basis",
+          "severity": "critical",
+          "controls": ["consent_management", "legal_basis_documentation", "purpose_limitation"]
+        },
+        {
+          "id": "GDPR-002",
+          "category": "Data Minimization",
+          "requirement": "Collect only necessary personal data",
+          "description": "Personal data must be adequate, relevant, and limited to what is necessary",
+          "severity": "high",
+          "controls": ["data_inventory", "necessity_assessment", "collection_limitation"]
+        },
+        {
+          "id": "GDPR-003",
+          "category": "Data Subject Rights",
+          "requirement": "Enable data subject rights exercise",
+          "description": "Must support access, rectification, erasure, portability, and objection rights",
+          "severity": "critical",
+          "controls": ["access_requests", "erasure_capability", "data_portability"]
+        },
+        {
+          "id": "GDPR-004",
+          "category": "Security",
+          "requirement": "Appropriate technical and organizational measures",
+          "description": "Implement security measures appropriate to the risk level",
+          "severity": "critical",
+          "controls": ["encryption", "access_control", "audit_logging", "incident_response"]
+        },
+        {
+          "id": "GDPR-005",
+          "category": "Privacy by Design",
+          "requirement": "Data protection by design and default",
+          "description": "Build privacy into systems from the start, default to most privacy-protective settings",
+          "severity": "high",
+          "controls": ["privacy_impact_assessment", "default_privacy_settings", "technical_measures"]
+        }
+      ]
+    },
+    "aml": {
+      "name": "AML/KYC",
+      "fullName": "Anti-Money Laundering / Know Your Customer",
+      "jurisdiction": "International",
+      "effectiveDate": "2020-01-10",
+      "requirements": [
+        {
+          "id": "AML-001",
+          "category": "Customer Due Diligence",
+          "requirement": "Perform CDD on all customers",
+          "description": "Identify and verify customer identity before establishing business relationship",
+          "severity": "critical",
+          "controls": ["identity_verification", "document_validation", "database_checks"]
+        },
+        {
+          "id": "AML-002",
+          "category": "Enhanced Due Diligence",
+          "requirement": "Apply EDD for high-risk customers",
+          "description": "Additional verification for PEPs, high-risk jurisdictions, complex ownership structures",
+          "severity": "critical",
+          "controls": ["pep_screening", "source_of_funds", "beneficial_ownership"]
+        },
+        {
+          "id": "AML-003",
+          "category": "Ongoing Monitoring",
+          "requirement": "Continuous transaction monitoring",
+          "description": "Monitor transactions for suspicious patterns and update customer information",
+          "severity": "high",
+          "controls": ["transaction_monitoring", "periodic_review", "risk_reassessment"]
+        },
+        {
+          "id": "AML-004",
+          "category": "Sanctions Screening",
+          "requirement": "Screen against sanctions lists",
+          "description": "Check customers and transactions against OFAC, EU, UN sanctions lists",
+          "severity": "critical",
+          "controls": ["sanctions_screening", "pep_lists", "adverse_media"]
+        },
+        {
+          "id": "AML-005",
+          "category": "Reporting",
+          "requirement": "File Suspicious Activity Reports",
+          "description": "Report suspicious transactions to financial intelligence units",
+          "severity": "critical",
+          "controls": ["sar_filing", "threshold_reporting", "record_keeping"]
+        }
+      ]
+    }
+  },
+  "riskMatrix": {
+    "likelihood": {
+      "rare": 1,
+      "unlikely": 2,
+      "possible": 3,
+      "likely": 4,
+      "almost_certain": 5
+    },
+    "impact": {
+      "negligible": 1,
+      "minor": 2,
+      "moderate": 3,
+      "major": 4,
+      "catastrophic": 5
+    },
+    "riskLevels": {
+      "low": { "min": 1, "max": 4, "color": "green" },
+      "medium": { "min": 5, "max": 9, "color": "yellow" },
+      "high": { "min": 10, "max": 16, "color": "orange" },
+      "critical": { "min": 17, "max": 25, "color": "red" }
+    }
+  },
+  "piiPatterns": {
+    "ssn": {
+      "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+      "description": "US Social Security Number",
+      "severity": "critical"
+    },
+    "creditCard": {
+      "pattern": "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b",
+      "description": "Credit Card Number",
+      "severity": "critical"
+    },
+    "email": {
+      "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+      "description": "Email Address",
+      "severity": "high"
+    },
+    "phone": {
+      "pattern": "\\b(?:\\+?1[-.]?)?(?:\\(?\\d{3}\\)?[-.]?)?\\d{3}[-.]?\\d{4}\\b",
+      "description": "Phone Number",
+      "severity": "medium"
+    },
+    "passport": {
+      "pattern": "\\b[A-Z]{1,2}[0-9]{6,9}\\b",
+      "description": "Passport Number",
+      "severity": "critical"
+    },
+    "iban": {
+      "pattern": "\\b[A-Z]{2}\\d{2}[A-Z0-9]{4}\\d{7}([A-Z0-9]?){0,16}\\b",
+      "description": "International Bank Account Number",
+      "severity": "critical"
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "verificationId": "VER-20240115-001",
+  "customerId": "C-12345",
+  "timestamp": "2024-01-15T10:55:00Z",
+  "status": "approved",
+  "summary": {
+    "overallResult": "PASS",
+    "identityVerified": true,
+    "documentsVerified": true,
+    "screeningClear": true,
+    "riskAcceptable": true
+  },
+  "identityVerification": {
+    "status": "verified",
+    "method": "document_verification",
+    "assuranceLevel": "high",
+    "checks": [
+      {
+        "name": "Document Authenticity",
+        "status": "passed",
+        "details": "Passport security features verified"
+      },
+      {
+        "name": "Biometric Match",
+        "status": "passed",
+        "details": "Photo match confidence: 98.5%"
+      },
+      {
+        "name": "Liveness Detection",
+        "status": "passed",
+        "details": "Live video verification completed"
+      },
+      {
+        "name": "Data Consistency",
+        "status": "passed",
+        "details": "Document data matches application data"
+      }
+    ],
+    "credentialIssued": {
+      "type": "IdentityCredential",
+      "issuer": "did:web:government.eu",
+      "validUntil": "2025-01-15T10:35:00Z"
+    }
+  },
+  "documentVerification": {
+    "passport": {
+      "status": "verified",
+      "checks": [
+        { "name": "MRZ Validation", "status": "passed" },
+        { "name": "Expiry Check", "status": "passed", "details": "Valid until 2028-03-20" },
+        { "name": "Issuing Authority", "status": "passed", "details": "Spanish Government" }
+      ]
+    },
+    "proofOfAddress": {
+      "status": "verified",
+      "checks": [
+        { "name": "Document Recency", "status": "passed", "details": "Issued within 3 months" },
+        { "name": "Address Match", "status": "passed" },
+        { "name": "Issuer Verification", "status": "passed" }
+      ]
+    }
+  },
+  "screeningResults": {
+    "pepScreening": {
+      "status": "clear",
+      "matchesFound": 0,
+      "listsChecked": ["PEP Lists Global", "PEP Lists EU"],
+      "checkedAt": "2024-01-15T10:45:00Z"
+    },
+    "sanctionsScreening": {
+      "status": "clear",
+      "matchesFound": 0,
+      "listsChecked": ["OFAC SDN", "EU Consolidated", "UN Security Council"],
+      "checkedAt": "2024-01-15T10:45:00Z"
+    },
+    "adverseMedia": {
+      "status": "clear",
+      "articlesScanned": 0,
+      "relevantHits": 0,
+      "checkedAt": "2024-01-15T10:45:00Z"
+    }
+  },
+  "riskAssessment": {
+    "score": 8,
+    "level": "medium",
+    "recommendation": "approve",
+    "monitoringLevel": "standard",
+    "reviewCycle": "quarterly",
+    "factors": {
+      "geographic": { "score": 6, "level": "medium" },
+      "product": { "score": 4, "level": "low" },
+      "behavioral": { "score": 4, "level": "low" }
+    }
+  },
+  "complianceStatus": {
+    "gdpr": {
+      "compliant": true,
+      "consentRecorded": true,
+      "legalBasis": "consent",
+      "retentionPolicyApplied": true
+    },
+    "amlKyc": {
+      "compliant": true,
+      "cddLevel": "standard",
+      "eddRequired": false,
+      "sarRequired": false
+    },
+    "eidas": {
+      "compliant": true,
+      "assuranceLevel": "high",
+      "credentialIssued": true
+    }
+  },
+  "decision": {
+    "outcome": "approved",
+    "decidedBy": "system",
+    "decidedAt": "2024-01-15T10:55:00Z",
+    "rationale": "All verification checks passed, screening clear, risk within acceptable threshold",
+    "conditions": [
+      "Standard transaction monitoring applies",
+      "Quarterly periodic review required"
+    ],
+    "nextReviewDate": "2024-04-15"
+  },
+  "auditReference": "audit_20240115_ver001"
+}

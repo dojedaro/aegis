@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aegis Compliance Platform | Daniel Ojeda - AI Enabler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/dashboard.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="header-brand">
+        <div class="brand-logo">
+          <span class="logo-icon">◆</span>
+          <div class="brand-text">
+            <h1>AEGIS</h1>
+            <span class="header-subtitle">Compliance Operations Platform</span>
+          </div>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn active" data-view="overview">Overview</button>
+        <button class="nav-btn" data-view="audit">Audit Trail</button>
+        <button class="nav-btn" data-view="risk">Risk Matrix</button>
+        <button class="nav-btn" data-view="credentials">Credentials</button>
+        <button class="nav-btn nav-btn-about" data-view="about">About This Demo</button>
+      </nav>
+      <div class="header-actions">
+        <button class="btn btn-demo" id="watch-demo-btn">
+          <span class="demo-icon">▶</span> Watch Demo
+        </button>
+        <div class="header-status">
+          <span class="status-indicator status-ok"></span>
+          <span>System Operational</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Overview View -->
+      <section id="overview-view" class="view active">
+        <div class="dashboard-grid">
+          <!-- Compliance Status Widget -->
+          <div class="widget widget-large" id="compliance-status-widget">
+            <h2 class="widget-title">Compliance Status</h2>
+            <div class="widget-content">
+              <!-- Populated by ComplianceStatus component -->
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="widget" id="stats-widget">
+            <h2 class="widget-title">Quick Stats</h2>
+            <div class="widget-content stats-grid">
+              <div class="stat-card">
+                <span class="stat-value" id="stat-checks">24</span>
+                <span class="stat-label">Checks Today</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value" id="stat-findings">3</span>
+                <span class="stat-label">Open Findings</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value stat-medium" id="stat-risk">Medium</span>
+                <span class="stat-label">Risk Level</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value" id="stat-audit">156</span>
+                <span class="stat-label">Audit Events</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="widget" id="activity-widget">
+            <h2 class="widget-title">Recent Activity</h2>
+            <div class="widget-content">
+              <div class="activity-list" id="activity-list">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Framework Status -->
+          <div class="widget" id="frameworks-widget">
+            <h2 class="widget-title">Framework Compliance</h2>
+            <div class="widget-content">
+              <div class="framework-list">
+                <div class="framework-item">
+                  <span class="framework-name">GDPR</span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width: 92%"></div>
+                  </div>
+                  <span class="framework-score">92%</span>
+                </div>
+                <div class="framework-item">
+                  <span class="framework-name">eIDAS 2.0</span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width: 87%"></div>
+                  </div>
+                  <span class="framework-score">87%</span>
+                </div>
+                <div class="framework-item">
+                  <span class="framework-name">AML/KYC</span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width: 95%"></div>
+                  </div>
+                  <span class="framework-score">95%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Audit Trail View -->
+      <section id="audit-view" class="view">
+        <div class="view-header">
+          <h2>Audit Trail</h2>
+          <div class="view-controls">
+            <select id="audit-period">
+              <option value="today">Today</option>
+              <option value="week" selected>This Week</option>
+              <option value="month">This Month</option>
+              <option value="all">All Time</option>
+            </select>
+            <select id="audit-filter">
+              <option value="all">All Events</option>
+              <option value="compliance">Compliance Only</option>
+              <option value="high-risk">High Risk</option>
+            </select>
+            <button class="btn btn-primary" id="export-audit">Export</button>
+          </div>
+        </div>
+        <div id="audit-trail-widget">
+          <!-- Populated by AuditTrail component -->
+        </div>
+      </section>
+
+      <!-- Risk Matrix View -->
+      <section id="risk-view" class="view">
+        <div class="view-header">
+          <h2>Risk Matrix</h2>
+          <div class="view-controls">
+            <select id="risk-category">
+              <option value="all">All Categories</option>
+              <option value="compliance">Compliance</option>
+              <option value="operational">Operational</option>
+              <option value="financial">Financial</option>
+            </select>
+          </div>
+        </div>
+        <div id="risk-matrix-widget">
+          <!-- Populated by RiskMatrix component -->
+        </div>
+      </section>
+
+      <!-- Credentials View -->
+      <section id="credentials-view" class="view">
+        <div class="view-header">
+          <h2>Credential Verification</h2>
+        </div>
+        <div id="credential-viewer-widget">
+          <!-- Populated by CredentialViewer component -->
+        </div>
+      </section>
+
+      <!-- About This Demo View -->
+      <section id="about-view" class="view">
+        <div id="about-content">
+          <!-- Populated by AboutDemo component -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Demo Overlay -->
+    <div id="demo-overlay" class="demo-overlay hidden">
+      <div class="demo-container">
+        <div class="demo-header">
+          <h3>Guided Demo</h3>
+          <button class="demo-close" id="demo-close">×</button>
+        </div>
+        <div class="demo-content">
+          <div class="demo-step" id="demo-step-content">
+            <!-- Dynamic content -->
+          </div>
+          <div class="demo-progress">
+            <div class="demo-progress-bar" id="demo-progress-bar"></div>
+          </div>
+        </div>
+        <div class="demo-footer">
+          <button class="btn btn-secondary" id="demo-prev">Previous</button>
+          <span class="demo-step-indicator" id="demo-step-indicator">1 / 6</span>
+          <button class="btn btn-primary" id="demo-next">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-left">
+        <span class="footer-brand">Aegis v1.0.0</span>
+        <span class="footer-divider">|</span>
+        <span>The Safe Company</span>
+      </div>
+      <div class="footer-center">
+        <span class="footer-note">Demo uses synthetic data for demonstration purposes</span>
+      </div>
+      <div class="footer-right">
+        <span class="footer-credit">Built by</span>
+        <a href="https://github.com/dojedaro" target="_blank" rel="noopener noreferrer" class="footer-author">
+          Daniel Ojeda
+        </a>
+        <span class="footer-title">AI Enabler</span>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

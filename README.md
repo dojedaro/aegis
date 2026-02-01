@@ -60,6 +60,23 @@ Aegis demonstrates how **AI agents can automate compliance workflows**:
 
 ---
 
+## 🤖 About This Project
+
+**This project isn't about the compliance platform itself.** It's a demonstration of how I used Claude Code's agentic capabilities to build and deploy a complete end-to-end system.
+
+The real value is showing how AI agents can be orchestrated to deliver working software:
+
+| Capability | What It Demonstrates |
+|------------|---------------------|
+| **Skills** | Orchestrating complex multi-step workflows with a single command |
+| **Subagents** | Spawning specialized AI experts for deep domain analysis |
+| **MCP Tools** | Extending Claude with custom, domain-specific capabilities |
+| **Hooks** | Enforcing deterministic guardrails (PII blocking, audit trails, pre-commit checks) |
+
+This is a portfolio piece demonstrating proficiency in **AI-enabled development** — using agentic AI to accelerate software delivery while maintaining quality and compliance.
+
+---
+
 ## ✨ Features
 
 ### AI Agent Architecture

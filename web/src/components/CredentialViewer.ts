@@ -3,12 +3,20 @@ interface VerificationResult {
   checks: { name: string; passed: boolean; details: string }[];
   warnings: string[];
   errors: string[];
+  credentialData?: {
+    issuer: string;
+    subject: string;
+    issuedDate: string;
+    expiryDate: string;
+    types: string[];
+  };
 }
 
 export class CredentialViewer {
   private containerId: string;
   private sampleCredential: object;
   private verificationResult: VerificationResult | null = null;
+  private isVerifying: boolean = false;
 
   constructor(containerId: string) {
     this.containerId = containerId;
@@ -49,12 +57,15 @@ export class CredentialViewer {
             <h3 style="margin-bottom: 1rem;">Verify Credential</h3>
             <div class="form-group">
               <label class="form-label">Credential JSON</label>
-              <textarea class="form-textarea" id="credential-input">${JSON.stringify(this.sampleCredential, null, 2)}</textarea>
+              <textarea class="form-textarea" id="credential-input" placeholder="Paste a W3C Verifiable Credential JSON here...">${JSON.stringify(this.sampleCredential, null, 2)}</textarea>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-              <button class="btn btn-primary" id="verify-btn">Verify Credential</button>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="verify-btn" ${this.isVerifying ? "disabled" : ""}>
+                ${this.isVerifying ? '<span class="spinner"></span> Verifying...' : 'Verify Credential'}
+              </button>
               <button class="btn btn-secondary" id="clear-btn">Clear</button>
               <button class="btn btn-secondary" id="sample-btn">Load Sample</button>
+              <button class="btn btn-secondary" id="sample-invalid-btn">Load Invalid</button>
             </div>
           </div>
         </div>
@@ -67,8 +78,11 @@ export class CredentialViewer {
       </div>
 
       <div style="margin-top: 2rem;">
-        <h3 style="font-size: 1rem; color: var(--color-text-muted); margin-bottom: 1rem;">RECENTLY VERIFIED</h3>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 style="font-size: 1rem; color: var(--color-text-muted);">RECENTLY VERIFIED</h3>
+          <button class="btn btn-secondary" id="clear-history-btn" style="font-size: 0.75rem; padding: 0.375rem 0.75rem;">Clear History</button>
+        </div>
+        <div id="recent-credentials" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
           ${this.renderRecentCredential("Identity Credential", "Maria Garcia", "Valid", "2 minutes ago")}
           ${this.renderRecentCredential("Education Credential", "John Smith", "Valid", "1 hour ago")}
           ${this.renderRecentCredential("Employment Credential", "Sarah Johnson", "Expired", "3 hours ago")}
@@ -81,11 +95,14 @@ export class CredentialViewer {
 
   private renderPlaceholder(): string {
     return `
-      <div style="background: var(--color-bg-tertiary); border-radius: 0.75rem; padding: 3rem; text-align: center;">
+      <div style="background: var(--color-bg-tertiary); border-radius: 0.75rem; padding: 3rem; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; min-height: 300px;">
         <div style="font-size: 3rem; margin-bottom: 1rem;">🎫</div>
         <h3 style="margin-bottom: 0.5rem;">No Credential Verified</h3>
         <p style="color: var(--color-text-muted);">
           Paste a W3C Verifiable Credential JSON and click "Verify" to see validation results.
+        </p>
+        <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 1rem;">
+          Or click "Load Sample" to try with example data.
         </p>
       </div>
     `;
@@ -97,30 +114,35 @@ export class CredentialViewer {
     const result = this.verificationResult;
     const statusClass = result.isValid ? "valid" : "invalid";
     const statusText = result.isValid ? "✓ VALID" : "✗ INVALID";
+    const statusBg = result.isValid ? "var(--color-success-bg)" : "var(--color-error-bg)";
+    const statusColor = result.isValid ? "var(--color-success)" : "var(--color-error)";
 
     return `
-      <div class="credential-card">
-        <div class="credential-header">
-          <div class="credential-type">
-            <span class="credential-type-badge">VerifiableCredential</span>
-            <span class="credential-type-badge">IdentityCredential</span>
+      <div class="credential-card" style="background: var(--color-bg-tertiary); border-radius: 0.75rem; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border);">
+          <div>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+              ${result.credentialData?.types.map(t => `<span style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: var(--color-primary-subtle); color: var(--color-primary); border-radius: 0.25rem;">${t}</span>`).join("") || ""}
+            </div>
           </div>
-          <div class="credential-status ${statusClass}">${statusText}</div>
+          <div style="background: ${statusBg}; color: ${statusColor}; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem;">
+            ${statusText}
+          </div>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
-          <h4 style="font-size: 0.875rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">VERIFICATION CHECKS</h4>
+          <h4 style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: 0.75rem;">VERIFICATION CHECKS</h4>
           <div style="display: flex; flex-direction: column; gap: 0.5rem;">
             ${result.checks
               .map(
                 (check) => `
-              <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <span style="color: var(--color-${check.passed ? "success" : "error"});">
+              <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; background: ${check.passed ? "var(--color-success-bg)" : "var(--color-error-bg)"}; border-radius: 0.375rem;">
+                <span style="color: var(--color-${check.passed ? "success" : "error"}); font-size: 1rem;">
                   ${check.passed ? "✓" : "✗"}
                 </span>
                 <div style="flex: 1;">
-                  <span style="font-weight: 500;">${check.name}</span>
-                  <span style="color: var(--color-text-muted); font-size: 0.875rem; margin-left: 0.5rem;">
+                  <span style="font-weight: 500; color: var(--color-text);">${check.name}</span>
+                  <span style="color: var(--color-text-muted); font-size: 0.75rem; margin-left: 0.5rem;">
                     ${check.details}
                   </span>
                 </div>
@@ -134,9 +156,9 @@ export class CredentialViewer {
         ${
           result.warnings.length > 0
             ? `
-          <div style="margin-bottom: 1rem;">
-            <h4 style="font-size: 0.875rem; color: var(--color-warning); margin-bottom: 0.5rem;">⚠ WARNINGS</h4>
-            ${result.warnings.map((w) => `<div style="font-size: 0.875rem; color: var(--color-text-muted);">• ${w}</div>`).join("")}
+          <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-warning-bg); border-radius: 0.5rem;">
+            <h4 style="font-size: 0.875rem; color: var(--color-warning); margin-bottom: 0.5rem;">⚠ Warnings</h4>
+            ${result.warnings.map((w) => `<div style="font-size: 0.875rem; color: var(--color-text-secondary);">• ${w}</div>`).join("")}
           </div>
         `
             : ""
@@ -145,32 +167,34 @@ export class CredentialViewer {
         ${
           result.errors.length > 0
             ? `
-          <div style="margin-bottom: 1rem;">
-            <h4 style="font-size: 0.875rem; color: var(--color-error); margin-bottom: 0.5rem;">✗ ERRORS</h4>
-            ${result.errors.map((e) => `<div style="font-size: 0.875rem; color: var(--color-text-muted);">• ${e}</div>`).join("")}
+          <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-error-bg); border-radius: 0.5rem;">
+            <h4 style="font-size: 0.875rem; color: var(--color-error); margin-bottom: 0.5rem;">✗ Errors</h4>
+            ${result.errors.map((e) => `<div style="font-size: 0.875rem; color: var(--color-text-secondary);">• ${e}</div>`).join("")}
           </div>
         `
             : ""
         }
 
-        <div class="credential-details">
-          <div class="credential-field">
-            <span class="credential-field-label">Issuer</span>
-            <span class="credential-field-value">did:web:government.eu</span>
+        ${result.credentialData ? `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border);">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--color-text-muted);">Issuer</div>
+              <div style="font-size: 0.875rem; color: var(--color-text); font-family: monospace; word-break: break-all;">${result.credentialData.issuer}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--color-text-muted);">Subject</div>
+              <div style="font-size: 0.875rem; color: var(--color-text);">${result.credentialData.subject}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--color-text-muted);">Issued</div>
+              <div style="font-size: 0.875rem; color: var(--color-text);">${result.credentialData.issuedDate}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--color-text-muted);">Expires</div>
+              <div style="font-size: 0.875rem; color: var(--color-text);">${result.credentialData.expiryDate}</div>
+            </div>
           </div>
-          <div class="credential-field">
-            <span class="credential-field-label">Subject</span>
-            <span class="credential-field-value">Maria Garcia</span>
-          </div>
-          <div class="credential-field">
-            <span class="credential-field-label">Issued</span>
-            <span class="credential-field-value">2024-01-01</span>
-          </div>
-          <div class="credential-field">
-            <span class="credential-field-label">Expires</span>
-            <span class="credential-field-value">2025-06-15</span>
-          </div>
-        </div>
+        ` : ""}
       </div>
     `;
   }
@@ -178,10 +202,10 @@ export class CredentialViewer {
   private renderRecentCredential(type: string, subject: string, status: string, time: string): string {
     const isValid = status === "Valid";
     return `
-      <div style="background: var(--color-bg-tertiary); padding: 1rem; border-radius: 0.5rem;">
+      <div style="background: var(--color-bg-tertiary); padding: 1rem; border-radius: 0.5rem; cursor: pointer; transition: transform 0.15s ease;" class="recent-cred-card" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
           <span style="font-weight: 500;">${type}</span>
-          <span class="credential-status ${isValid ? "valid" : "invalid"}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+          <span style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 0.25rem; background: ${isValid ? "var(--color-success-bg)" : "var(--color-error-bg)"}; color: ${isValid ? "var(--color-success)" : "var(--color-error)"};">
             ${isValid ? "✓" : "✗"} ${status}
           </span>
         </div>
@@ -195,10 +219,12 @@ export class CredentialViewer {
     const verifyBtn = document.getElementById("verify-btn");
     const clearBtn = document.getElementById("clear-btn");
     const sampleBtn = document.getElementById("sample-btn");
+    const sampleInvalidBtn = document.getElementById("sample-invalid-btn");
+    const clearHistoryBtn = document.getElementById("clear-history-btn");
     const input = document.getElementById("credential-input") as HTMLTextAreaElement;
 
-    verifyBtn?.addEventListener("click", () => {
-      this.verifyCredential(input?.value || "");
+    verifyBtn?.addEventListener("click", async () => {
+      await this.verifyCredential(input?.value || "");
     });
 
     clearBtn?.addEventListener("click", () => {
@@ -210,9 +236,45 @@ export class CredentialViewer {
     sampleBtn?.addEventListener("click", () => {
       if (input) input.value = JSON.stringify(this.sampleCredential, null, 2);
     });
+
+    sampleInvalidBtn?.addEventListener("click", () => {
+      const invalidCredential = {
+        "@context": ["https://example.com/invalid"],
+        type: ["SomeCredential"],
+        issuer: "did:web:unknown-issuer.xyz",
+        credentialSubject: {},
+      };
+      if (input) input.value = JSON.stringify(invalidCredential, null, 2);
+    });
+
+    clearHistoryBtn?.addEventListener("click", () => {
+      const recentDiv = document.getElementById("recent-credentials");
+      if (recentDiv) {
+        recentDiv.innerHTML = `
+          <div style="grid-column: span 3; text-align: center; padding: 2rem; color: var(--color-text-muted);">
+            No recent verifications
+          </div>
+        `;
+      }
+    });
+
+    // Click handlers for recent credential cards
+    document.querySelectorAll(".recent-cred-card").forEach(card => {
+      card.addEventListener("click", () => {
+        // Load sample and verify
+        if (input) input.value = JSON.stringify(this.sampleCredential, null, 2);
+        this.verifyCredential(JSON.stringify(this.sampleCredential));
+      });
+    });
   }
 
-  private verifyCredential(jsonString: string): void {
+  private async verifyCredential(jsonString: string): Promise<void> {
+    this.isVerifying = true;
+    this.render();
+
+    // Simulate verification delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
     try {
       const credential = JSON.parse(jsonString);
 
@@ -241,7 +303,8 @@ export class CredentialViewer {
 
       // Issuer check
       const hasIssuer = !!credential.issuer;
-      const issuerTrusted = hasIssuer && (typeof credential.issuer === "string" ? credential.issuer : credential.issuer.id)?.includes("government");
+      const issuerId = typeof credential.issuer === "string" ? credential.issuer : credential.issuer?.id;
+      const issuerTrusted = hasIssuer && issuerId?.includes("government");
       checks.push({
         name: "Issuer",
         passed: issuerTrusted,
@@ -276,21 +339,35 @@ export class CredentialViewer {
         details: hasSubject ? "Subject claims present" : "Empty subject",
       });
 
+      // Extract credential data for display
+      const credentialData = {
+        issuer: issuerId || "Unknown",
+        subject: credential.credentialSubject?.givenName && credential.credentialSubject?.familyName
+          ? `${credential.credentialSubject.givenName} ${credential.credentialSubject.familyName}`
+          : credential.credentialSubject?.id || "Unknown",
+        issuedDate: credential.issuanceDate ? new Date(credential.issuanceDate).toLocaleDateString() : "Unknown",
+        expiryDate: credential.expirationDate ? new Date(credential.expirationDate).toLocaleDateString() : "No expiration",
+        types: credential.type || [],
+      };
+
       this.verificationResult = {
         isValid: errors.length === 0,
         checks,
         warnings,
         errors,
+        credentialData,
       };
 
+      this.isVerifying = false;
       this.render();
     } catch {
       this.verificationResult = {
         isValid: false,
         checks: [],
         warnings: [],
-        errors: ["Invalid JSON format"],
+        errors: ["Invalid JSON format - please check your input"],
       };
+      this.isVerifying = false;
       this.render();
     }
   }

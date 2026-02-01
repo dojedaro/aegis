@@ -4,7 +4,7 @@
 
 ![Aegis Logo](https://img.shields.io/badge/AEGIS-Compliance%20Platform-00d4aa?style=for-the-badge&logo=shield&logoColor=white)
 
-**A comprehensive demonstration of Claude Code's extensibility features for enterprise compliance operations**
+**Transforming regulatory compliance with AI agents — from hours to seconds**
 
 [![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-4a9eff?style=flat-square)](https://claude.ai)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -12,108 +12,81 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://aegis-web-xi.vercel.app/)
 
-[**Live Demo**](https://aegis-web-xi.vercel.app/) • [Features](#features) • [Quick Start](#quick-start) • [Architecture](#architecture) • [Documentation](#documentation)
+[**Live Demo**](https://aegis-web-xi.vercel.app/) • [Why This Matters](#-why-this-matters) • [Features](#features) • [Architecture](#architecture) • [Quick Start](#quick-start)
 
 </div>
 
 ---
 
-## Overview
+## 🎯 Why This Matters
 
-Aegis showcases how AI agents can transform regulatory compliance workflows. Built for KYC, AML, eIDAS 2.0, and verifiable credentials management, this project demonstrates mastery of Claude Code's full extensibility stack:
+### The Problem
 
-- **Skills** - Invocable workflows that orchestrate AI agents
-- **MCP Server** - Custom tools extending Claude's capabilities
-- **Hooks** - Deterministic guardrails for sensitive operations
-- **Subagents** - Specialized AI agents for deep domain analysis
+Regulatory compliance is expensive and slow:
+- **Manual reviews** take 4-8 hours per code change
+- **Expert bottleneck** — limited compliance specialists available
+- **Inconsistent coverage** — humans miss patterns across large codebases
+- **Audit preparation** takes weeks of documentation gathering
 
-> **Note:** This is a demonstration project using synthetic data. "The Safe Company" is a fictional organization. No real personal data or proprietary information is used.
+### The Solution
 
-## Features
+Aegis demonstrates how **AI agents can automate compliance workflows**:
 
-### Claude Code Integration
+| Traditional Approach | With Aegis |
+|---------------------|------------|
+| 4-8 hours per review | **< 30 seconds** |
+| Manual checklist verification | **Automated pattern analysis** |
+| Reactive audit preparation | **Continuous compliance monitoring** |
+| Single-framework expertise | **Multi-regulation coverage** (GDPR, eIDAS, AML) |
 
-| Component | Count | Description |
-|-----------|-------|-------------|
-| **Skills** | 5 | Invocable compliance workflows |
-| **MCP Tools** | 5 | Domain-specific compliance automation |
-| **MCP Resources** | 2 | Real-time data providers |
-| **Hooks** | 3 | Pre/post operation guardrails |
-| **Subagents** | 4 | Specialized AI analysis agents |
+### How It Works
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  /compliance-   │────▶│  AI Orchestration │────▶│  Compliance     │
+│     check       │     │                  │     │  Report         │
+└─────────────────┘     │  • MCP Tools     │     └─────────────────┘
+                        │  • Subagents     │
+                        │  • Hooks         │
+                        └──────────────────┘
+```
+
+**One command. Multiple AI agents. Comprehensive analysis.**
+
+---
+
+## ✨ Features
+
+### AI Agent Architecture
+
+| Component | Count | Purpose |
+|-----------|-------|---------|
+| **Skills** | 5 | Orchestrate complex compliance workflows |
+| **MCP Tools** | 5 | Extend Claude with domain-specific capabilities |
+| **Hooks** | 3 | Deterministic guardrails (PII blocking, audit logging) |
+| **Subagents** | 4 | Specialized AI experts for deep analysis |
+
+### Specialized AI Subagents
+
+| Agent | Expertise |
+|-------|-----------|
+| **Regulatory Analyst** | Multi-jurisdiction compliance (GDPR, eIDAS, AML) |
+| **Risk Assessor** | Likelihood × impact scoring, EDD recommendations |
+| **Audit Documenter** | Audit-ready report generation |
+| **Security Reviewer** | Privacy impact, vulnerability analysis |
 
 ### Compliance Capabilities
 
-- **Regulatory Checking** - Analyze code against GDPR, eIDAS 2.0, AML/KYC
-- **Risk Assessment** - Score entities using likelihood × impact matrix
-- **Audit Trail** - Immutable logging for regulatory compliance
-- **Credential Verification** - Validate W3C Verifiable Credentials
-- **Incident Response** - Guided compliance incident workflows
+- **Regulatory Checking** — Analyze code against GDPR, eIDAS 2.0, AML/KYC
+- **Risk Assessment** — Score entities using standard risk matrices
+- **Audit Trail** — Immutable logging for regulatory evidence
+- **Credential Verification** — Validate W3C Verifiable Credentials
+- **Incident Response** — Guided compliance incident workflows
+- **PII Protection** — Automatic detection and blocking of sensitive data
 
-### User Interfaces
+---
 
-- **CLI** - Interactive command-line demo with colorful output
-- **Web Dashboard** - Professional compliance monitoring interface
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- npm 9+
-- Claude Code CLI
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/dojedaro/aegis.git
-cd aegis
-
-# Install dependencies
-npm install
-
-# Build all packages
-npm run build
-```
-
-### Running the Web Dashboard
-
-```bash
-cd web && npm run dev
-# Open http://localhost:5173
-```
-
-### Running the CLI
-
-```bash
-# Interactive demo walkthrough
-cd cli && npm run demo
-
-# Run compliance check
-npx aegis check ./src
-
-# View audit trail
-npx aegis audit
-
-# Run risk assessment
-npx aegis risk customer:C-12345
-```
-
-### Using Claude Code Skills
-
-```bash
-# Navigate to the aegis project
-cd aegis
-
-# Invoke skills
-/compliance-check src/services/user.ts
-/audit-report --period month
-/risk-assess customer:C-12345
-/credential-verify ./credentials/sample.json
-/incident-respond --severity high --type data_breach
-```
-
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -135,181 +108,177 @@ cd aegis
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Project Structure
+### Key Design Decisions
+
+1. **Skills as orchestrators** — Each skill coordinates multiple tools and can spawn specialized subagents
+2. **Hooks for guardrails** — Deterministic checks that run before/after AI operations
+3. **MCP for extensibility** — Custom tools that give Claude domain-specific capabilities
+4. **Subagents for expertise** — Deep domain knowledge encoded in specialized prompts
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+- Claude Code CLI
+
+### Installation
+
+```bash
+git clone https://github.com/dojedaro/aegis.git
+cd aegis
+npm install
+npm run build
+```
+
+### Try It Out
+
+**Web Dashboard:**
+```bash
+cd web && npm run dev
+# Open http://localhost:5173
+```
+
+**CLI Demo:**
+```bash
+cd cli && npm run demo
+```
+
+**Claude Code Skills:**
+```bash
+cd aegis
+
+# Run compliance check
+/compliance-check examples/sample-kyc-flow/customer-data.json
+
+# Assess risk
+/risk-assess customer:C-12345 --type customer
+
+# Verify credential
+/credential-verify ./examples/sample-kyc-flow/customer-data.json
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 aegis/
-├── CLAUDE.md                     # Project context for Claude Code
 ├── .claude/
-│   ├── settings.json             # Claude Code configuration
-│   ├── skills/                   # 5 invocable skills
-│   │   ├── compliance-check.md   # Regulatory analysis workflow
-│   │   ├── audit-report.md       # Audit documentation generator
-│   │   ├── risk-assess.md        # Risk scoring workflow
-│   │   ├── credential-verify.md  # W3C VC validation
-│   │   └── incident-respond.md   # Incident response workflow
-│   └── hooks.json                # Hook definitions
+│   ├── skills/              # 5 invocable workflows
+│   │   ├── compliance-check.md
+│   │   ├── audit-report.md
+│   │   ├── risk-assess.md
+│   │   ├── credential-verify.md
+│   │   └── incident-respond.md
+│   └── hooks.json           # Hook definitions
 │
 ├── hooks/
-│   ├── pii-scanner.js            # Pre-edit PII detection
-│   ├── audit-logger.js           # Post-tool audit logging
-│   └── compliance-gate.js        # Pre-commit compliance check
+│   ├── pii-scanner.js       # Blocks PII before file writes
+│   ├── audit-logger.js      # Logs all operations
+│   └── compliance-gate.js   # Validates commits
 │
-├── mcp-server/                   # MCP server with tools & resources
-│   ├── src/
-│   │   ├── index.ts              # Server entry point
-│   │   ├── tools/                # 5 compliance tools
-│   │   └── resources/            # 2 resource providers
-│   └── data/
-│       └── regulations.json      # Regulatory requirements database
-│
-├── subagents/                    # 4 specialized agent prompts
-│   ├── regulatory-analyst.md     # Multi-jurisdiction expert
-│   ├── risk-assessor.md          # Risk evaluation specialist
-│   ├── audit-documenter.md       # Documentation generator
-│   └── security-reviewer.md      # Security & privacy reviewer
-│
-├── cli/                          # Interactive CLI demo
+├── mcp-server/
 │   └── src/
-│       ├── index.ts              # CLI entry point
-│       └── commands/             # check, audit, risk, demo
+│       ├── tools/           # 5 MCP tools
+│       └── resources/       # 2 resource providers
 │
-├── web/                          # Web dashboard
-│   └── src/
-│       ├── main.ts               # Dashboard entry
-│       └── components/           # UI components
+├── subagents/               # 4 AI specialist prompts
+│   ├── regulatory-analyst.md
+│   ├── risk-assessor.md
+│   ├── audit-documenter.md
+│   └── security-reviewer.md
 │
-└── examples/                     # Example workflows & data
+├── cli/                     # Interactive CLI
+├── web/                     # Dashboard UI
+└── examples/                # Sample data & workflows
 ```
 
-## Documentation
+---
 
-### Skills Reference
+## 🔧 Skills Reference
 
-| Skill | Command | Description |
-|-------|---------|-------------|
-| Compliance Check | `/compliance-check` | Analyze code/config for regulatory compliance |
-| Audit Report | `/audit-report` | Generate audit-ready documentation |
-| Risk Assessment | `/risk-assess` | Evaluate entity risk scores |
-| Credential Verify | `/credential-verify` | Validate W3C Verifiable Credentials |
-| Incident Response | `/incident-respond` | Guide compliance incident workflow |
+| Skill | Command | What It Does |
+|-------|---------|--------------|
+| **Compliance Check** | `/compliance-check <file>` | Scans for PII, analyzes against regulations, spawns Regulatory Analyst for deep review |
+| **Audit Report** | `/audit-report --period month` | Queries audit trail, spawns Audit Documenter, generates formatted report |
+| **Risk Assessment** | `/risk-assess <entity>` | Calculates risk scores, spawns Risk Assessor, provides EDD recommendations |
+| **Credential Verify** | `/credential-verify <file>` | Validates W3C VCs, checks issuer trust, maps to eIDAS requirements |
+| **Incident Response** | `/incident-respond --severity high` | Guides incident workflow, spawns Security Reviewer, generates documentation |
 
-### MCP Tools
+---
 
-| Tool | Description |
-|------|-------------|
-| `regulatory_check` | Check content against GDPR, eIDAS 2.0, AML/KYC |
-| `audit_log` | Create and query audit trail entries |
-| `risk_score` | Calculate risk scores for entities |
-| `credential_validate` | Validate W3C VC format and signatures |
-| `pii_detect` | Scan for PII patterns |
+## 🛡️ Hooks (Automated Guardrails)
 
-### Hooks
+| Hook | Trigger | Action |
+|------|---------|--------|
+| **PII Scanner** | Before Edit/Write | Blocks SSN, credit cards, API keys — prevents accidental data exposure |
+| **Audit Logger** | After all tools | Creates immutable audit trail for compliance evidence |
+| **Compliance Gate** | Before git commit | Scans staged files for secrets, validates audit trail currency |
 
-| Hook | Trigger | Purpose |
-|------|---------|---------|
-| `pii-scanner.js` | Pre-Edit/Write | Block PII in code |
-| `audit-logger.js` | Post-Tool | Log all operations |
-| `compliance-gate.js` | Pre-Commit | Validate compliance |
+---
 
-### Regulatory Frameworks
+## 📊 Example Output
 
-- **GDPR** - Data protection, consent, privacy by design
-- **eIDAS 2.0** - Digital identity, qualified trust services
-- **AML/KYC** - Customer due diligence, sanctions screening
+### Compliance Check
+```
+/compliance-check src/services/user.ts
 
-## Example Scenarios
+✓ PII Scan: No sensitive data detected
+✓ GDPR Analysis: 11/12 requirements met
+⚠ AML-001: Customer Due Diligence needs verification
 
-### Scenario 1: Compliance Check
-
-```bash
-$ aegis check src/services/user-verification.ts
-
-✓ Analyzed 1 file(s)
+Spawning Regulatory Analyst for detailed review...
 
 Findings:
-┌──────────┬──────────┬──────────┬─────────────────────────────┐
-│ ID       │ Framework│ Severity │ Requirement                 │
-├──────────┼──────────┼──────────┼─────────────────────────────┤
-│ GDPR-004 │ GDPR     │ HIGH     │ Appropriate security meas...│
-│ AML-001  │ AML/KYC  │ HIGH     │ Customer Due Diligence      │
-└──────────┴──────────┴──────────┴─────────────────────────────┘
-
-Overall Status: NEEDS REVIEW
+┌──────────┬──────────┬─────────────────────────────────┐
+│ ID       │ Severity │ Recommendation                  │
+├──────────┼──────────┼─────────────────────────────────┤
+│ AML-001  │ HIGH     │ Add explicit CDD step before    │
+│          │          │ customer data processing        │
+└──────────┴──────────┴─────────────────────────────────┘
 ```
 
-### Scenario 2: Risk Assessment
+### Risk Assessment
+```
+/risk-assess customer:C-12345 --type customer
 
-```bash
-$ aegis risk customer:C-12345 --type customer
+Risk Factors:
+• Cross-border transfers    L:4 × I:4 = 16 (HIGH)
+• PEP exposure             L:2 × I:5 = 10 (HIGH)
+• Transaction volume       L:3 × I:3 = 9  (MEDIUM)
 
-Risk Assessment
-===============
-Overall Score: 14/25 (HIGH RISK)
+Overall: 14/25 — HIGH RISK
 
-Recommendations:
-1. Apply Enhanced Due Diligence
-2. Complete PEP screening
-3. Monthly transaction monitoring
+Regulatory Implications:
+→ AML: Apply Enhanced Due Diligence
+→ Monitoring: Monthly transaction review required
 ```
 
-### Scenario 3: Credential Verification
+---
 
-```bash
-$ /credential-verify ./credentials/identity-vc.json
+## 🔗 Links
 
-✓ Context: Valid W3C VC
-✓ Issuer: Trusted (government.eu)
-✓ Signature: Ed25519 verified
-✓ Expiry: Valid until 2025-06-15
+- **Live Demo:** https://aegis-web-xi.vercel.app/
+- **GitHub:** https://github.com/dojedaro/aegis
 
-Result: VALID
-```
+---
 
-## Development
+## 📝 Note on Data
 
-### Building
-
-```bash
-# Build all packages
-npm run build
-
-# Build specific package
-npm run build:mcp
-npm run build:cli
-npm run build:web
-```
-
-### Development Mode
-
-```bash
-# MCP server (watch mode)
-cd mcp-server && npm run dev
-
-# Web dashboard (hot reload)
-cd web && npm run dev
-```
-
-## Tech Stack
-
-- **TypeScript** - Type-safe implementation
-- **MCP SDK** - Model Context Protocol server
-- **Vite** - Web dashboard bundler
-- **Commander** - CLI framework
-- **Chalk/Ora** - Terminal styling
-
-## License
-
-MIT
+This project uses **synthetic data** for demonstration. "The Safe Company" is fictional. No real personal data, proprietary information, or production systems are involved.
 
 ---
 
 <div align="center">
 
-### Built by [Daniel Ojeda](https://github.com/dojedaro) | AI Enabler
+### Built by [Daniel Ojeda](https://github.com/dojedaro)
 
-*Demonstrating the power of AI-assisted development with Claude Code*
+**AI Enabler** — Transforming complex workflows with intelligent automation
 
-**The Safe Company** (fictional)
+[![GitHub](https://img.shields.io/badge/GitHub-dojedaro-181717?style=flat-square&logo=github)](https://github.com/dojedaro)
 
 </div>

@@ -4,6 +4,7 @@ import { RiskMatrix } from "./components/RiskMatrix.js";
 import { CredentialViewer } from "./components/CredentialViewer.js";
 import { RegulationsLibrary } from "./components/RegulationsLibrary.js";
 import { AboutDemo } from "./components/AboutDemo.js";
+import { apiClient } from "./services/ApiClient.js";
 
 // Demo walkthrough functionality
 interface DemoStep {
@@ -28,6 +29,7 @@ const demoSteps: DemoStep[] = [
         <li><strong>GDPR</strong> - EU data protection regulation</li>
         <li><strong>eIDAS 2.0</strong> - Digital identity framework</li>
         <li><strong>AML/KYC</strong> - Anti-money laundering requirements</li>
+        <li><strong>EU AI Act</strong> - Artificial intelligence regulation</li>
       </ul>
       <p>The compliance gauge shows your overall score, with detailed breakdowns by framework.</p>
     `,
@@ -107,7 +109,7 @@ Critical: 17-25 (Red)
 let currentDemoStep = 0;
 
 // Initialize everything when DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Initialize components
   const complianceStatus = new ComplianceStatus("compliance-status-widget");
   const auditTrail = new AuditTrail("audit-trail-widget");
@@ -123,7 +125,16 @@ document.addEventListener("DOMContentLoaded", () => {
   credentialViewer.render();
   regulationsLibrary.render();
   aboutDemo.render();
-  initializeActivityList();
+
+  // Initialize stats and activity with API data
+  await initializeQuickStats();
+  await initializeActivityList();
+
+  // Add click handlers to stat cards
+  initializeStatCardClicks();
+
+  // Show connection status
+  updateConnectionStatus();
 
   // Navigation handling
   const navButtons = document.querySelectorAll<HTMLButtonElement>(".nav-btn");
@@ -266,30 +277,226 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("https://github.com/dojedaro/aegis");
 });
 
-// Initialize activity list with sample data
-function initializeActivityList(): void {
+// Initialize quick stats from API
+async function initializeQuickStats(): Promise<void> {
+  const checksEl = document.getElementById("stat-checks");
+  const findingsEl = document.getElementById("stat-findings");
+  const riskEl = document.getElementById("stat-risk");
+  const auditEl = document.getElementById("stat-audit");
+
+  // Try to get real data from API
+  const stats = await apiClient.getComplianceStats();
+  const auditData = await apiClient.getAuditEntries({ period: "today" });
+  const riskData = await apiClient.getRiskMatrix();
+
+  if (stats && checksEl) {
+    checksEl.textContent = String(stats.overview.total_checks || 24);
+  }
+
+  if (auditData && auditEl) {
+    auditEl.textContent = String(auditData.pagination.total || 156);
+  }
+
+  if (riskData && riskEl) {
+    const highRisk = (riskData.distribution?.high || 0) + (riskData.distribution?.critical || 0);
+    const level = highRisk > 2 ? "High" : highRisk > 0 ? "Medium" : "Low";
+    riskEl.textContent = level;
+    riskEl.className = `stat-value stat-${level.toLowerCase()}`;
+  }
+
+  // Calculate open findings
+  if (auditData && findingsEl) {
+    const openFindings = auditData.entries.filter(
+      (e) => e.risk_level === "high" || e.risk_level === "critical"
+    ).length;
+    findingsEl.textContent = String(openFindings || 3);
+  }
+}
+
+// Make stat cards clickable
+function initializeStatCardClicks(): void {
+  const statCards = document.querySelectorAll(".stat-card");
+
+  statCards.forEach((card, index) => {
+    (card as HTMLElement).style.cursor = "pointer";
+    card.addEventListener("click", () => {
+      const labels = ["checks", "findings", "risk", "audit"];
+      const label = labels[index];
+
+      switch (label) {
+        case "checks":
+          showStatDetail("Compliance Checks Today", `
+            <p>Automated compliance checks run in the last 24 hours.</p>
+            <div style="margin-top: 1rem;">
+              <button class="btn btn-primary" id="run-check-btn">Run New Check</button>
+            </div>
+          `);
+          document.getElementById("run-check-btn")?.addEventListener("click", async () => {
+            const result = await apiClient.runComplianceCheck("demo-entity", "customer", ["gdpr", "aml"]);
+            if (result) {
+              alert(`Compliance check complete! Score: ${result.score}%`);
+            }
+          });
+          break;
+
+        case "findings":
+          // Navigate to audit view with high-risk filter
+          document.querySelector<HTMLButtonElement>('[data-view="audit"]')?.click();
+          const filterEl = document.getElementById("audit-filter") as HTMLSelectElement;
+          if (filterEl) {
+            filterEl.value = "high-risk";
+            filterEl.dispatchEvent(new Event("change"));
+          }
+          break;
+
+        case "risk":
+          // Navigate to risk matrix
+          document.querySelector<HTMLButtonElement>('[data-view="risk"]')?.click();
+          break;
+
+        case "audit":
+          // Navigate to audit trail
+          document.querySelector<HTMLButtonElement>('[data-view="audit"]')?.click();
+          break;
+      }
+    });
+
+    // Add hover effect
+    card.addEventListener("mouseenter", () => {
+      (card as HTMLElement).style.transform = "translateY(-2px)";
+      (card as HTMLElement).style.boxShadow = "0 4px 12px rgba(0, 212, 170, 0.15)";
+    });
+    card.addEventListener("mouseleave", () => {
+      (card as HTMLElement).style.transform = "none";
+      (card as HTMLElement).style.boxShadow = "none";
+    });
+  });
+}
+
+function showStatDetail(title: string, content: string): void {
+  const existingModal = document.getElementById("stat-detail-modal");
+  if (existingModal) existingModal.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "stat-detail-modal";
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+  `;
+
+  modal.innerHTML = `
+    <div style="background: var(--color-bg-secondary); border-radius: 1rem; max-width: 500px; width: 100%; border: 1px solid var(--color-border); padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="color: var(--color-text); margin: 0;">${title}</h3>
+        <button id="close-stat-modal" style="background: none; border: none; color: var(--color-text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+      <div style="color: var(--color-text-secondary);">
+        ${content}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document.getElementById("close-stat-modal")?.addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
+// Initialize activity list with API data
+async function initializeActivityList(): Promise<void> {
   const activityList = document.getElementById("activity-list");
   if (!activityList) return;
 
-  const activities = [
-    { icon: "✓", type: "success", title: "Compliance check passed", time: "2 minutes ago" },
-    { icon: "⚠", type: "warning", title: "Risk assessment flagged", time: "15 minutes ago" },
-    { icon: "✓", type: "success", title: "Credential verified", time: "1 hour ago" },
-    { icon: "✗", type: "error", title: "PII detected in commit", time: "2 hours ago" },
-    { icon: "✓", type: "success", title: "Audit report generated", time: "3 hours ago" },
-  ];
+  // Try to get real data from API
+  const auditData = await apiClient.getAuditEntries({ period: "today" });
 
-  activityList.innerHTML = activities
-    .map(
-      (a) => `
-      <div class="activity-item">
-        <div class="activity-icon ${a.type}">${a.icon}</div>
-        <div class="activity-content">
-          <div class="activity-title">${a.title}</div>
-          <div class="activity-time">${a.time}</div>
+  if (auditData && auditData.entries.length > 0) {
+    const activities = auditData.entries.slice(0, 5).map((entry) => {
+      const isSuccess = entry.risk_level === "low";
+      const isWarning = entry.risk_level === "medium";
+      const isError = entry.risk_level === "high" || entry.risk_level === "critical";
+
+      return {
+        icon: isSuccess ? "✓" : isWarning ? "⚠" : isError ? "✗" : "•",
+        type: isSuccess ? "success" : isWarning ? "warning" : isError ? "error" : "info",
+        title: entry.action.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+        time: formatTimeAgo(new Date(entry.timestamp)),
+      };
+    });
+
+    activityList.innerHTML = activities
+      .map(
+        (a) => `
+        <div class="activity-item">
+          <div class="activity-icon ${a.type}">${a.icon}</div>
+          <div class="activity-content">
+            <div class="activity-title">${a.title}</div>
+            <div class="activity-time">${a.time}</div>
+          </div>
         </div>
-      </div>
-    `
-    )
-    .join("");
+      `
+      )
+      .join("");
+  } else {
+    // Fallback to demo data
+    const activities = [
+      { icon: "✓", type: "success", title: "Compliance check passed", time: "2 minutes ago" },
+      { icon: "⚠", type: "warning", title: "Risk assessment flagged", time: "15 minutes ago" },
+      { icon: "✓", type: "success", title: "Credential verified", time: "1 hour ago" },
+      { icon: "✗", type: "error", title: "PII detected in commit", time: "2 hours ago" },
+      { icon: "✓", type: "success", title: "Audit report generated", time: "3 hours ago" },
+    ];
+
+    activityList.innerHTML = activities
+      .map(
+        (a) => `
+        <div class="activity-item">
+          <div class="activity-icon ${a.type}">${a.icon}</div>
+          <div class="activity-content">
+            <div class="activity-title">${a.title}</div>
+            <div class="activity-time">${a.time}</div>
+          </div>
+        </div>
+      `
+      )
+      .join("");
+  }
+}
+
+function formatTimeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+  if (seconds < 60) return "Just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+  return `${Math.floor(seconds / 86400)} days ago`;
+}
+
+function updateConnectionStatus(): void {
+  const statusEl = document.querySelector(".header-status");
+  if (statusEl) {
+    const indicator = statusEl.querySelector(".status-indicator");
+    const text = statusEl.querySelector("span:last-child");
+
+    if (apiClient.isConnected) {
+      indicator?.classList.remove("status-warning");
+      indicator?.classList.add("status-ok");
+      if (text) text.textContent = "API Connected";
+    } else {
+      indicator?.classList.remove("status-ok");
+      indicator?.classList.add("status-warning");
+      if (text) text.textContent = "Demo Mode";
+    }
+  }
 }

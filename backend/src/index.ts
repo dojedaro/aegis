@@ -8,11 +8,13 @@ import { initializeDatabase } from "./db/schema.js";
 import { ClaudeService } from "./services/claude.js";
 import { RAGService } from "./services/rag.js";
 import { createAuditRouter } from "./routes/audit.js";
+import { createAuthRouter } from "./routes/auth.js";
 import { createComplianceRouter } from "./routes/compliance.js";
 import { createRiskRouter } from "./routes/risk.js";
 import { createCredentialsRouter } from "./routes/credentials.js";
 import { createPIIRouter } from "./routes/pii.js";
 import { createRegulationsRouter } from "./routes/regulations.js";
+import { optionalAuth } from "./middleware/auth.js";
 
 // Load environment variables
 config();
@@ -53,6 +55,9 @@ async function main() {
   });
   app.use(limiter);
 
+  // Optional auth - attaches user to request if token provided
+  app.use(optionalAuth);
+
   // Health check
   app.get("/health", (req, res) => {
     res.json({
@@ -82,6 +87,7 @@ async function main() {
   });
 
   // Routes
+  app.use("/api/auth", createAuthRouter());
   app.use("/api/audit", createAuditRouter());
   app.use("/api/compliance", createComplianceRouter(claudeService));
   app.use("/api/risk", createRiskRouter(claudeService));
@@ -143,6 +149,8 @@ async function main() {
 ║   • POST /api/pii/scan     - Scan for PII                  ║
 ║   • POST /api/regulations/query - RAG Q&A                  ║
 ║   • POST /api/regulations/search - Semantic search         ║
+║   • POST /api/auth/login   - Get JWT token                 ║
+║   • POST /api/auth/demo-token - Get demo token             ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
     `);

@@ -271,6 +271,16 @@ body {
   box-shadow: 0 0 8px var(--color-success);
 }
 
+.status-indicator.status-warning {
+  background: var(--color-warning);
+  box-shadow: 0 0 8px var(--color-warning);
+}
+
+.status-indicator.status-error {
+  background: var(--color-error);
+  box-shadow: 0 0 8px var(--color-error);
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }

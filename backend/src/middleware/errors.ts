@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
 
 // Custom error classes for better error handling
 export class ApiError extends Error {
@@ -43,6 +44,12 @@ export function errorHandler(
   _next: NextFunction
 ): void {
   const requestId = (req as any).requestId || "unknown";
+
+  // Invalid body/query: Express 5 forwards errors thrown by any (sync or async) handler here
+  if (err instanceof ZodError) {
+    res.status(400).json({ error: "Validation failed", details: err.errors, request_id: requestId });
+    return;
+  }
 
   // Handle known API errors
   if (err instanceof ApiError) {

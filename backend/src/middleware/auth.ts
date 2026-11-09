@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "aegis-demo-secret-change-in-production";
+import { appConfig } from "../config.js";
 
 export interface AuthUser {
   id: string;
@@ -17,20 +16,16 @@ declare global {
   }
 }
 
-// Generate a demo token for testing
-export function generateDemoToken(): string {
-  const payload: AuthUser = {
-    id: "demo-user-1",
-    email: "demo@safeco.com",
-    role: "analyst",
-  };
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
+export const TOKEN_TTL = "24h";
+
+export function signToken(user: AuthUser & { name?: string }): string {
+  return jwt.sign(user, appConfig.jwtSecret, { expiresIn: TOKEN_TTL, algorithm: "HS256" });
 }
 
 // Verify JWT token
 export function verifyToken(token: string): AuthUser | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as AuthUser;
+    return jwt.verify(token, appConfig.jwtSecret, { algorithms: ["HS256"] }) as AuthUser;
   } catch {
     return null;
   }

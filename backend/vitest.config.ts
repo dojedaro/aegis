@@ -12,5 +12,7 @@ export default defineConfig({
       exclude: ["src/**/*.test.ts", "src/db/seed.ts"],
     },
     testTimeout: 10000,
+    // Isolated, throwaway database and no real API calls during tests
+    env: { AEGIS_DB_PATH: ":memory:", ANTHROPIC_API_KEY: "", JWT_SECRET: "test-secret", NODE_ENV: "test" },
   },
 });

@@ -68,7 +68,7 @@ export function createRegulationsRouter(ragService: RAGService): Router {
    * /api/regulations/search:
    *   post:
    *     summary: Semantic search across regulations
-   *     description: Search regulatory articles using keyword and semantic matching
+   *     description: Search regulatory articles using BM25 lexical ranking
    *     tags: [Regulations]
    *     requestBody:
    *       required: true
@@ -97,7 +97,6 @@ export function createRegulationsRouter(ragService: RAGService): Router {
         results: results.map((r) => ({
           article: r.article,
           score: Math.round(r.score * 100) / 100,
-          match_type: r.matchType,
         })),
         count: results.length,
       });
@@ -142,7 +141,7 @@ export function createRegulationsRouter(ragService: RAGService): Router {
    *                   type: array
    *                   items:
    *                     $ref: '#/components/schemas/RegulationArticle'
-   *                 cached: { type: boolean }
+   *                 answer_source: { type: string, enum: [claude, cache, extractive] }
    *                 ai_enabled: { type: boolean }
    */
   router.post("/query", async (req, res) => {
@@ -159,7 +158,7 @@ export function createRegulationsRouter(ragService: RAGService): Router {
           title: s.title,
           link: s.officialLink,
         })),
-        cached: result.cached,
+        answer_source: result.answer_source,
         ai_enabled: ragService.isEnabled,
       });
     } catch (error) {

@@ -2,12 +2,34 @@ import { Router } from "express";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { query, run, get } from "../db/schema.js";
+import { requireRole } from "../middleware/auth.js";
+import { PaginationSchema, pageParams } from "./list-query.js";
+
+const AuditListQuery = PaginationSchema.extend({
+  period: z.enum(["today", "week", "month", "all"]).default("week"),
+  filter: z.enum(["all", "compliance", "high-risk"]).default("all"),
+});
+
+const AuditExportQuery = z.object({
+  period: z.enum(["week", "month", "quarter", "all"]).default("month"),
+  format: z.enum(["json", "csv"]).default("json"),
+});
+
+/**
+ * Quote a CSV cell (RFC 4180) and neutralize spreadsheet formulas: audit fields contain
+ * user-supplied text, and a cell starting with "=" would execute when opened in Excel.
+ */
+export function csvCell(value: unknown): string {
+  let text = value === null || value === undefined ? "" : String(value);
+  const isFormula = /^[=+\-@\t\r]/.test(text);
+  if (isFormula) text = `'${text}`;
+  return isFormula || /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
 
 const AuditEntrySchema = z.object({
-  actor: z.string().min(1),
-  action: z.string().min(1),
-  resource: z.string().min(1),
-  details: z.string().optional(),
+  action: z.string().min(1).max(100),
+  resource: z.string().min(1).max(500),
+  details: z.string().max(5000).optional(),
   risk_level: z.enum(["low", "medium", "high", "critical"]),
   compliance_relevant: z.boolean().default(false),
 });
@@ -65,8 +87,9 @@ export function createAuditRouter(): Router {
    *                     pages: { type: integer }
    */
   router.get("/", (req, res) => {
-    const { period = "week", filter = "all", page = "1", limit = "20" } = req.query;
+    const { period, filter, page, limit } = AuditListQuery.parse(req.query);
 
+    // Only fixed SQL fragments are interpolated; request values are enum-validated above.
     let dateFilter = "";
     switch (period) {
       case "today":
@@ -92,8 +115,6 @@ export function createAuditRouter(): Router {
         break;
     }
 
-    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
-
     const countResult = get<{ total: number }>(
       `SELECT COUNT(*) as total FROM audit_entries WHERE 1=1 ${dateFilter} ${typeFilter}`
     );
@@ -101,17 +122,12 @@ export function createAuditRouter(): Router {
 
     const entries = query(
       `SELECT * FROM audit_entries WHERE 1=1 ${dateFilter} ${typeFilter} ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
-      [parseInt(limit as string), offset]
+      pageParams({ page, limit })
     );
 
     res.json({
       entries,
-      pagination: {
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
-        total,
-        pages: Math.ceil(total / parseInt(limit as string)),
-      },
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   });
 
@@ -129,9 +145,8 @@ export function createAuditRouter(): Router {
    *         application/json:
    *           schema:
    *             type: object
-   *             required: [actor, action, resource, risk_level]
+   *             required: [action, resource, risk_level]
    *             properties:
-   *               actor: { type: string }
    *               action: { type: string }
    *               resource: { type: string }
    *               details: { type: string }
@@ -147,26 +162,21 @@ export function createAuditRouter(): Router {
    *       400:
    *         description: Validation error
    */
-  router.post("/", (req, res) => {
-    try {
-      const data = AuditEntrySchema.parse(req.body);
+  router.post("/", requireRole("analyst", "admin"), (req, res) => {
+    const data = AuditEntrySchema.parse(req.body);
+    // The actor is the authenticated user, never a client-supplied name:
+    // otherwise anyone could write evidence on someone else's behalf.
+    const actor = req.user!.email;
 
-      const id = randomUUID();
-      const timestamp = new Date().toISOString();
+    const id = randomUUID();
+    const timestamp = new Date().toISOString();
 
-      run(
-        `INSERT INTO audit_entries (id, timestamp, actor, action, resource, details, risk_level, compliance_relevant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, timestamp, data.actor, data.action, data.resource, data.details ?? null, data.risk_level, data.compliance_relevant ? 1 : 0]
-      );
+    run(
+      `INSERT INTO audit_entries (id, timestamp, actor, action, resource, details, risk_level, compliance_relevant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, timestamp, actor, data.action, data.resource, data.details ?? null, data.risk_level, data.compliance_relevant ? 1 : 0]
+    );
 
-      res.status(201).json({ id, timestamp, ...data });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Validation failed", details: error.errors });
-      } else {
-        throw error;
-      }
-    }
+    res.status(201).json({ id, timestamp, actor, ...data });
   });
 
   /**
@@ -224,8 +234,8 @@ export function createAuditRouter(): Router {
    *       200:
    *         description: Exported audit data
    */
-  router.get("/actions/export", (req, res) => {
-    const { period = "month", format = "json" } = req.query;
+  router.get("/actions/export", requireRole("analyst", "admin"), (req, res) => {
+    const { period, format } = AuditExportQuery.parse(req.query);
 
     let dateFilter = "";
     switch (period) {
@@ -245,10 +255,9 @@ export function createAuditRouter(): Router {
     const entries = query(`SELECT * FROM audit_entries ${dateFilter} ORDER BY timestamp DESC`);
 
     if (format === "csv") {
-      const headers = "id,timestamp,actor,action,resource,risk_level,compliance_relevant\n";
-      const rows = entries
-        .map((e: any) => `${e.id},${e.timestamp},${e.actor},${e.action},${e.resource},${e.risk_level},${e.compliance_relevant}`)
-        .join("\n");
+      const columns = ["id", "timestamp", "actor", "action", "resource", "risk_level", "compliance_relevant"];
+      const headers = columns.join(",") + "\n";
+      const rows = entries.map((e: any) => columns.map((c) => csvCell(e[c])).join(",")).join("\n");
 
       res.setHeader("Content-Type", "text/csv");
       res.setHeader("Content-Disposition", `attachment; filename=audit-export-${new Date().toISOString().split("T")[0]}.csv`);

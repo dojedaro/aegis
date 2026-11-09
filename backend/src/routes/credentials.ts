@@ -2,6 +2,12 @@ import { Router } from "express";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { query, run, get } from "../db/schema.js";
+import { PaginationSchema, pageParams, whereClause } from "./list-query.js";
+
+const CredentialListQuery = PaginationSchema.extend({
+  status: z.enum(["valid", "expired", "revoked", "invalid"]).optional(),
+  type: z.string().max(100).optional(),
+});
 
 const CredentialSchema = z.object({
   type: z.string().min(1),
@@ -17,18 +23,12 @@ export function createCredentialsRouter(): Router {
 
   // GET /api/credentials - List credentials
   router.get("/", (req, res) => {
-    const { status, type, page = "1", limit = "20" } = req.query;
-
-    let filters = [];
-    if (status) filters.push(`status = '${status}'`);
-    if (type) filters.push(`type = '${type}'`);
-
-    const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
-    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const { status, type, ...pagination } = CredentialListQuery.parse(req.query);
+    const where = whereClause({ status, type });
 
     const credentials = query(
-      `SELECT * FROM credentials ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [parseInt(limit as string), offset]
+      `SELECT * FROM credentials ${where.sql} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [...where.params, ...pageParams(pagination)]
     );
 
     res.json({ credentials });

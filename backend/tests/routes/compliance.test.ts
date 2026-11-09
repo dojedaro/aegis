@@ -2,24 +2,13 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import express from "express";
 import request from "supertest";
 import { initializeDatabase, query, run } from "../../src/db/schema.js";
-import { ClaudeService } from "../../src/services/claude.js";
-import { createComplianceRouter } from "../../src/routes/compliance.js";
+import { buildTestApp } from "../helpers.js";
 
 describe("Compliance Routes", () => {
   let app: express.Express;
 
   beforeAll(async () => {
-    // Initialize database first
-    await initializeDatabase();
-
-    const claudeService = new ClaudeService({
-      maxTokensPerRequest: 1024,
-      dailyRequestLimit: 1000,
-    });
-
-    app = express();
-    app.use(express.json());
-    app.use("/api/compliance", createComplianceRouter(claudeService));
+    app = await buildTestApp();
   });
 
   afterAll(() => {

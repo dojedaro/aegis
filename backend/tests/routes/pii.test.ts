@@ -1,22 +1,13 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import express from "express";
 import request from "supertest";
-import { ClaudeService } from "../../src/services/claude.js";
-import { createPIIRouter } from "../../src/routes/pii.js";
+import { buildTestApp } from "../helpers.js";
 
 describe("PII Routes", () => {
   let app: express.Express;
 
   beforeAll(async () => {
-    // Mock ClaudeService without database dependency for PII tests
-    const claudeService = new ClaudeService({
-      maxTokensPerRequest: 1024,
-      dailyRequestLimit: 1000,
-    });
-
-    app = express();
-    app.use(express.json());
-    app.use("/api/pii", createPIIRouter(claudeService));
+    app = await buildTestApp();
   });
 
   describe("POST /api/pii/scan", () => {

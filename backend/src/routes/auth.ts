@@ -1,23 +1,28 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { run, get } from "../db/schema.js";
 import { randomUUID } from "crypto";
-
-const JWT_SECRET = process.env.JWT_SECRET || "aegis-demo-secret-change-in-production";
+import { run } from "../db/schema.js";
+import { appConfig } from "../config.js";
+import { AuthUser, TOKEN_TTL, requireAuth, signToken } from "../middleware/auth.js";
 
 const LoginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
 
-// Demo users (in production, this would be a database with hashed passwords)
-const DEMO_USERS: Record<string, { password: string; role: "admin" | "analyst" | "viewer"; name: string }> = {
+type Role = AuthUser["role"];
+
+// Fictional demo accounts for "The Safe Company" (documented in the README).
+// Demo-only: a real deployment would delegate to an identity provider instead of in-code credentials.
+const DEMO_USERS: Record<string, { password: string; role: Role; name: string }> = {
   "admin@safeco.com": { password: "admin123", role: "admin", name: "Admin User" },
   "analyst@safeco.com": { password: "analyst123", role: "analyst", name: "Compliance Analyst" },
   "viewer@safeco.com": { password: "viewer123", role: "viewer", name: "Audit Viewer" },
   "demo@safeco.com": { password: "demo", role: "analyst", name: "Demo User" },
 };
+
+const REFRESH_GRACE_SECONDS = 7 * 24 * 60 * 60;
 
 export function createAuthRouter(): Router {
   const router = Router();
@@ -48,78 +53,38 @@ export function createAuthRouter(): Router {
    *         description: Invalid credentials
    */
   router.post("/login", (req, res) => {
-    try {
-      const data = LoginSchema.parse(req.body);
+    const data = LoginSchema.parse(req.body);
 
-      const user = DEMO_USERS[data.email];
-      if (!user || user.password !== data.password) {
-        return res.status(401).json({ error: "Invalid email or password" });
-      }
-
-      const payload = {
-        id: `user-${data.email.split("@")[0]}`,
-        email: data.email,
-        role: user.role,
-        name: user.name,
-      };
-
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
-
-      // Log authentication
-      run(
-        `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, ?, 'auth_login', 'auth', 'low', 0)`,
-        [randomUUID(), new Date().toISOString(), data.email]
-      );
-
-      res.json({
-        token,
-        user: {
-          id: payload.id,
-          email: data.email,
-          name: user.name,
-          role: user.role,
-        },
-        expiresIn: "24h",
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Validation failed", details: error.errors });
-      } else {
-        throw error;
-      }
+    const account = DEMO_USERS[data.email];
+    if (!account || account.password !== data.password) {
+      return res.status(401).json({ error: "Invalid email or password" });
     }
+
+    const user = { id: `user-${data.email.split("@")[0]}`, email: data.email, role: account.role, name: account.name };
+
+    run(
+      `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, ?, 'auth_login', 'auth', 'low', 0)`,
+      [randomUUID(), new Date().toISOString(), data.email]
+    );
+
+    res.json({ token: signToken(user), user, expiresIn: TOKEN_TTL });
   });
 
   /**
    * @swagger
    * /api/auth/demo-token:
    *   post:
-   *     summary: Get a demo token for testing
+   *     summary: Get a read-only demo token for exploring the API
+   *     description: Issues a `viewer` token. Use /api/auth/login with an analyst account for write access.
    *     tags: [Auth]
    *     responses:
    *       200:
    *         description: Demo token generated
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/LoginResponse'
    */
   router.post("/demo-token", (req, res) => {
-    const payload = {
-      id: "demo-user-1",
-      email: "demo@safeco.com",
-      role: "analyst" as const,
-      name: "Demo User",
-    };
-
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
-
-    res.json({
-      token,
-      user: payload,
-      expiresIn: "24h",
-      note: "This is a demo token for testing. In production, use /api/auth/login.",
-    });
+    // Viewer only: an anonymous endpoint must not hand out write permissions.
+    const user = { id: "demo-viewer", email: "viewer@safeco.com", role: "viewer" as const, name: "Demo Viewer" };
+    res.json({ token: signToken(user), user, expiresIn: TOKEN_TTL });
   });
 
   /**
@@ -133,31 +98,11 @@ export function createAuthRouter(): Router {
    *     responses:
    *       200:
    *         description: Current user details
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 user:
-   *                   $ref: '#/components/schemas/User'
    *       401:
    *         description: Not authenticated
    */
-  router.get("/me", (req, res) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "No token provided" });
-    }
-
-    const token = authHeader.substring(7);
-
-    try {
-      const user = jwt.verify(token, JWT_SECRET);
-      res.json({ user });
-    } catch {
-      res.status(401).json({ error: "Invalid or expired token" });
-    }
+  router.get("/me", requireAuth, (req, res) => {
+    res.json({ user: req.user });
   });
 
   /**
@@ -165,57 +110,38 @@ export function createAuthRouter(): Router {
    * /api/auth/refresh:
    *   post:
    *     summary: Refresh access token
+   *     description: Accepts a valid token, or one that expired less than 7 days ago.
    *     tags: [Auth]
    *     security:
    *       - bearerAuth: []
    *     responses:
    *       200:
    *         description: New token generated
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 token: { type: string }
-   *                 expiresIn: { type: string }
    *       401:
    *         description: Invalid or expired token
    */
   router.post("/refresh", (req, res) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const header = req.headers.authorization;
+    if (!header?.startsWith("Bearer ")) {
       return res.status(401).json({ error: "No token provided" });
     }
 
-    const token = authHeader.substring(7);
-
+    let decoded: AuthUser & { name?: string; exp: number };
     try {
-      const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true }) as {
-        id: string;
-        email: string;
-        role: string;
-        name: string;
-        iat: number;
-        exp: number;
-      };
-
-      // Only allow refresh within 7 days of expiry
-      const now = Math.floor(Date.now() / 1000);
-      if (decoded.exp < now - 7 * 24 * 60 * 60) {
-        return res.status(401).json({ error: "Token too old to refresh" });
-      }
-
-      const newToken = jwt.sign(
-        { id: decoded.id, email: decoded.email, role: decoded.role, name: decoded.name },
-        JWT_SECRET,
-        { expiresIn: "24h" }
-      );
-
-      res.json({ token: newToken, expiresIn: "24h" });
+      decoded = jwt.verify(header.slice(7), appConfig.jwtSecret, {
+        algorithms: ["HS256"],
+        ignoreExpiration: true,
+      }) as typeof decoded;
     } catch {
-      res.status(401).json({ error: "Invalid token" });
+      return res.status(401).json({ error: "Invalid token" });
     }
+
+    if (decoded.exp < Math.floor(Date.now() / 1000) - REFRESH_GRACE_SECONDS) {
+      return res.status(401).json({ error: "Token too old to refresh" });
+    }
+
+    const { id, email, role, name } = decoded;
+    res.json({ token: signToken({ id, email, role, name }), expiresIn: TOKEN_TTL });
   });
 
   return router;

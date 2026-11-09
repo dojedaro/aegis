@@ -101,12 +101,13 @@ This is a portfolio piece demonstrating proficiency in **AI-enabled development*
 
 - **Regulatory Checking** — Analyze code against GDPR, eIDAS 2.0, AML/KYC, EU AI Act
 - **Risk Assessment** — Score entities using standard risk matrices
-- **Audit Trail** — Immutable logging for regulatory evidence
+- **Audit Trail** — Append-only evidence log; writes require an analyst/admin token and record the authenticated actor
 - **Credential Verification** — Validate W3C Verifiable Credentials
 - **Incident Response** — Guided compliance incident workflows
 - **PII Protection** — Automatic detection and blocking of sensitive data
-- **RAG-Powered Search** — Semantic search across 27 regulation articles with EUR-Lex links
-- **Real AI Integration** — Claude API for intelligent compliance analysis (optional)
+- **RAG-Powered Q&A** — BM25 retrieval over 26 curated regulation articles; answers cite articles and link to EUR-Lex
+- **Agentic Review** — Claude drives a tool loop whose tools do real work: regulation retrieval, deterministic PII scanning, and finding recording that rejects citations to articles that don't exist. The score is computed in code, not by the model
+- **Explainable Risk Scoring** — Deterministic rule-based KYC/AML scoring (sanctions hit ⇒ critical), optionally refined by Claude with schema-validated structured output
 
 ---
 
@@ -271,7 +272,7 @@ aegis/
 | Hook | Trigger | Action |
 |------|---------|--------|
 | **PII Scanner** | Before Edit/Write | Blocks SSN, credit cards, API keys — prevents accidental data exposure |
-| **Audit Logger** | After all tools | Creates immutable audit trail for compliance evidence |
+| **Audit Logger** | After all tools | Appends every tool call to an audit trail for compliance evidence |
 | **Compliance Gate** | Before git commit | Scans staged files for secrets, validates audit trail currency |
 
 ---
@@ -331,7 +332,7 @@ cd backend && npm run dev
 Features:
 - **OpenAPI 3.0** specification with full schema definitions
 - **Interactive testing** - Try endpoints directly in the browser
-- **Authentication** - JWT Bearer token support
+- **Authentication** - JWT Bearer tokens (HS256) with role-based access control
 - **Request correlation IDs** - Every request gets a unique `x-request-id` for tracing
 
 ### Endpoints
@@ -339,25 +340,32 @@ Features:
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/auth/login` | POST | Get JWT access token |
-| `/api/auth/demo-token` | POST | Get demo token for testing |
+| `/api/auth/demo-token` | POST | Get a read-only (viewer) demo token |
 | `/api/auth/me` | GET | Get current user info |
-| `/api/audit` | GET/POST | Audit trail management |
+| `/api/audit` | GET | Audit trail (filter by period/type) |
+| `/api/audit` | POST | Append an audit entry (**analyst/admin**) |
+| `/api/audit/actions/export` | GET | JSON/CSV export (**analyst/admin**) |
 | `/api/compliance/check` | POST | Run compliance analysis |
 | `/api/risk/assess` | POST | Risk assessment with scoring |
 | `/api/credentials/verify` | POST | Verify W3C credentials |
 | `/api/pii/scan` | POST | Scan for PII patterns |
 | `/api/pii/redact` | POST | Redact PII from content |
-| `/api/regulations/search` | POST | Semantic search across regulations |
+| `/api/regulations/search` | POST | BM25 search across regulations |
 | `/api/regulations/query` | POST | RAG-powered Q&A about regulations |
+| `/api/agent/analyze` | POST | Agentic compliance review (tool use) |
+| `/api/agent/risk` | POST | AI risk assessment (structured output) |
 
 ### Authentication
 
-Demo credentials for testing:
+Demo credentials for the fictional "The Safe Company" (demo only; a real deployment would use an identity provider):
 ```
 admin@safeco.com / admin123    (admin role)
 analyst@safeco.com / analyst123 (analyst role)
+viewer@safeco.com / viewer123   (viewer role)
 demo@safeco.com / demo         (analyst role)
 ```
+
+Read endpoints are public for the live demo. Writing to or exporting the audit trail requires an `analyst` or `admin` token, and the entry's actor is always taken from the token. In production the server refuses to start without `JWT_SECRET`.
 
 ### AI Features (Optional)
 
@@ -366,7 +374,7 @@ Set `ANTHROPIC_API_KEY` environment variable to enable:
 - AI-powered PII detection
 - RAG-based regulation Q&A
 
-Without API key, the system uses rule-based fallbacks with demo responses.
+Every AI-backed response says where it came from (`source` / `answer_source` / `mode`): `claude`, `cache`, `rules`, `extractive` or `demo`. Without an API key the API runs in clearly labeled demo mode. If a model call fails, the request fails (or falls back to the deterministic result and says so); it never substitutes made-up findings. AI endpoints have a separate per-IP rate limit.
 
 ```bash
 # .env
@@ -380,8 +388,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 Run the full stack with Docker:
 
 ```bash
-# Build and start all services
-docker-compose up -d
+# Build and start all services (JWT_SECRET is required in production mode)
+JWT_SECRET=$(openssl rand -hex 32) docker-compose up -d
 
 # View logs
 docker-compose logs -f

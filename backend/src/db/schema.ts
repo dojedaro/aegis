@@ -3,9 +3,11 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
+import { appConfig } from "../config.js";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, "../../data");
-const DB_PATH = join(DATA_DIR, "aegis.db");
+const DB_PATH = appConfig.dbPath ?? join(__dirname, "../../data/aegis.db");
+const IN_MEMORY = DB_PATH === ":memory:";
 
 let db: SqlJsDatabase | null = null;
 
@@ -14,13 +16,12 @@ export async function initializeDatabase(): Promise<SqlJsDatabase> {
 
   const SQL = await initSqlJs();
 
-  // Ensure data directory exists
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
+  if (!IN_MEMORY && !existsSync(dirname(DB_PATH))) {
+    mkdirSync(dirname(DB_PATH), { recursive: true });
   }
 
   // Load existing database or create new
-  if (existsSync(DB_PATH)) {
+  if (!IN_MEMORY && existsSync(DB_PATH)) {
     const buffer = readFileSync(DB_PATH);
     db = new SQL.Database(buffer);
   } else {
@@ -123,7 +124,7 @@ export async function initializeDatabase(): Promise<SqlJsDatabase> {
 }
 
 export function saveDatabase(): void {
-  if (db) {
+  if (db && !IN_MEMORY) {
     const data = db.export();
     const buffer = Buffer.from(data);
     writeFileSync(DB_PATH, buffer);

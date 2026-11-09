@@ -8,7 +8,7 @@ dist/
 .env
 
 # Database files (local development data)
-data/
+/data/
 
 # Logs
 *.log

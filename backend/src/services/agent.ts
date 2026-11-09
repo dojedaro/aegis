@@ -1,345 +1,262 @@
-import Anthropic from "@anthropic-ai/sdk";
+import type { BetaMessageParam, BetaTool, BetaToolResultBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
+import { ARTICLES } from "../data/regulations.js";
+import { LLMClient, textOf } from "./llm.js";
+import { scanPII } from "./pii-scanner.js";
+import type { RAGService } from "./rag.js";
 
-// Agentic compliance service using Claude with tool use
-// Provides multi-step reasoning and autonomous analysis capabilities
+/**
+ * Agentic compliance review.
+ *
+ * Claude drives a tool loop, but every tool does real, deterministic work:
+ *   - search_regulations: BM25 retrieval over the curated article library (grounding)
+ *   - scan_pii:          rule-based PII detection on an excerpt (evidence)
+ *   - record_finding:    validated finding; the cited article must exist (no invented citations)
+ * The score is computed in code from finding severities, not by the model.
+ */
+
+export type Severity = "low" | "medium" | "high" | "critical";
+
+export interface Finding {
+  id: string;
+  severity: Severity;
+  regulation: string;
+  article_id: string;
+  description: string;
+  recommendation: string;
+}
 
 export interface ComplianceAgentResult {
   analysis: string;
-  findings: Array<{
-    id: string;
-    severity: "low" | "medium" | "high" | "critical";
-    regulation: string;
-    description: string;
-    recommendation: string;
-  }>;
+  findings: Finding[];
   score: number;
   actions_taken: string[];
+  mode: "agentic" | "demo";
 }
 
 export interface RiskAgentResult {
   entity: string;
-  risk_level: "low" | "medium" | "high" | "critical";
+  risk_level: Severity;
   score: number;
-  factors: Array<{
-    name: string;
-    score: number;
-    rationale: string;
-  }>;
+  factors: Array<{ name: string; score: number; rationale: string }>;
   recommendations: string[];
+  mode: "agentic" | "demo";
 }
 
-// Tool definitions for agentic workflows
-const COMPLIANCE_TOOLS: Anthropic.Tool[] = [
+export const SEVERITY_PENALTY: Record<Severity, number> = { low: 3, medium: 8, high: 15, critical: 25 };
+export const MAX_AGENT_TURNS = 8;
+const MAX_CONTENT_CHARS = 8000;
+
+export function scoreFindings(findings: Pick<Finding, "severity">[]): number {
+  return Math.max(0, 100 - findings.reduce((sum, f) => sum + SEVERITY_PENALTY[f.severity], 0));
+}
+
+const ARTICLE_IDS = new Set(ARTICLES.map((a) => a.id));
+
+const TOOLS: BetaTool[] = [
   {
-    name: "check_gdpr_requirement",
-    description: "Check if content meets a specific GDPR requirement",
+    name: "search_regulations",
+    description:
+      "Search the regulation library (GDPR, eIDAS 2.0, AML/6AMLD, EU AI Act). Returns article ids, titles and summaries. " +
+      "Use it to find the exact article a requirement comes from before recording a finding.",
     input_schema: {
-      type: "object" as const,
+      type: "object",
       properties: {
-        requirement_id: { type: "string", description: "GDPR article number (e.g., 'Art. 5', 'Art. 17')" },
-        content_excerpt: { type: "string", description: "Relevant content to check" },
+        query: { type: "string", description: "What to look for, e.g. 'retention period for KYC records'" },
       },
-      required: ["requirement_id", "content_excerpt"],
+      required: ["query"],
     },
   },
   {
-    name: "check_aml_requirement",
-    description: "Check if content meets AML/KYC requirements",
+    name: "scan_pii",
+    description: "Run the deterministic PII scanner on an excerpt of the content. Returns PII types, counts and masked samples.",
     input_schema: {
-      type: "object" as const,
-      properties: {
-        check_type: { type: "string", enum: ["cdd", "edd", "pep_screening", "sanctions"], description: "Type of AML check" },
-        content_excerpt: { type: "string", description: "Relevant content to check" },
-      },
-      required: ["check_type", "content_excerpt"],
-    },
-  },
-  {
-    name: "check_eidas_requirement",
-    description: "Check if content meets eIDAS 2.0 requirements",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        requirement_type: { type: "string", enum: ["identity_verification", "qualified_signature", "trust_services", "wallet"], description: "Type of eIDAS requirement" },
-        content_excerpt: { type: "string", description: "Relevant content to check" },
-      },
-      required: ["requirement_type", "content_excerpt"],
+      type: "object",
+      properties: { excerpt: { type: "string", description: "Text copied from the content under review" } },
+      required: ["excerpt"],
     },
   },
   {
     name: "record_finding",
-    description: "Record a compliance finding",
+    description:
+      "Record one compliance issue found in the content. article_id must be an id returned by search_regulations. " +
+      "Only record issues supported by the content itself.",
     input_schema: {
-      type: "object" as const,
+      type: "object",
       properties: {
-        id: { type: "string", description: "Finding ID (e.g., GDPR-001)" },
         severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
-        regulation: { type: "string", description: "Regulation name" },
-        description: { type: "string", description: "What was found" },
-        recommendation: { type: "string", description: "How to fix it" },
+        article_id: { type: "string", description: "e.g. gdpr-art-5" },
+        description: { type: "string", description: "What is wrong, quoting the relevant part of the content" },
+        recommendation: { type: "string", description: "Concrete fix" },
       },
-      required: ["id", "severity", "regulation", "description", "recommendation"],
-    },
-  },
-  {
-    name: "calculate_score",
-    description: "Calculate final compliance score",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        base_score: { type: "number", description: "Starting score (usually 100)" },
-        deductions: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              reason: { type: "string" },
-              points: { type: "number" },
-            },
-          },
-          description: "Score deductions",
-        },
-      },
-      required: ["base_score", "deductions"],
+      required: ["severity", "article_id", "description", "recommendation"],
     },
   },
 ];
 
+const SEVERITIES = new Set<Severity>(["low", "medium", "high", "critical"]);
+
 export class ComplianceAgentService {
-  private client: Anthropic | null = null;
-  private isEnabled: boolean;
-
-  constructor(apiKey?: string) {
-    this.isEnabled = !!apiKey;
-
-    if (apiKey) {
-      this.client = new Anthropic({ apiKey });
-    }
-  }
+  constructor(
+    private readonly llm: LLMClient | null,
+    private readonly rag: RAGService
+  ) {}
 
   get enabled(): boolean {
-    return this.isEnabled && this.client !== null;
+    return this.llm !== null;
   }
 
-  async analyzeCompliance(
-    content: string,
-    frameworks: string[],
-    targetType: string
-  ): Promise<ComplianceAgentResult> {
-    if (!this.client) {
-      return this.getDemoResult(frameworks);
-    }
+  async analyzeCompliance(content: string, frameworks: string[], targetType: string): Promise<ComplianceAgentResult> {
+    if (!this.llm) return demoComplianceResult(frameworks);
 
-    const findings: ComplianceAgentResult["findings"] = [];
-    const actionsTaken: string[] = [];
-    let score = 100;
+    const findings: Finding[] = [];
+    const actions: string[] = [];
+    let messages: BetaMessageParam[] = [
+      {
+        role: "user",
+        content: `Review the following ${targetType} for compliance with: ${frameworks.join(", ")}.
 
-    try {
-      // Initial analysis request with tools
-      let messages: Anthropic.MessageParam[] = [
-        {
-          role: "user",
-          content: `You are a compliance analyst. Analyze the following ${targetType} for compliance with: ${frameworks.join(", ")}.
+Work method: search the regulation library for the requirements that apply, use scan_pii on any part that may contain personal data, and call record_finding for each real issue (citing the article id you found). When you are done, reply with a short summary and no further tool calls.
 
-Use the available tools to:
-1. Check specific requirements for each framework
-2. Record any findings you discover
-3. Calculate the final compliance score
+<content>
+${content.slice(0, MAX_CONTENT_CHARS)}
+</content>`,
+      },
+    ];
 
-Content to analyze:
-\`\`\`
-${content.slice(0, 4000)}
-\`\`\`
+    for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
+      const response = await this.llm.create({ messages, tools: TOOLS, effort: "medium" });
 
-Perform a thorough analysis using the tools, then provide a final summary.`,
-        },
-      ];
-
-      // Agentic loop - allow up to 5 tool use iterations
-      for (let turn = 0; turn < 5; turn++) {
-        const response = await this.client.messages.create({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 2048,
-          tools: COMPLIANCE_TOOLS,
-          messages,
-        });
-
-        // Process response
-        let hasToolUse = false;
-        const toolResults: Anthropic.ToolResultBlockParam[] = [];
-
-        for (const block of response.content) {
-          if (block.type === "tool_use") {
-            hasToolUse = true;
-            const toolInput = block.input as Record<string, unknown>;
-
-            // Simulate tool execution
-            let result: string;
-            switch (block.name) {
-              case "check_gdpr_requirement":
-                actionsTaken.push(`Checked GDPR ${toolInput.requirement_id}`);
-                result = JSON.stringify({ compliant: true, notes: "Requirement appears to be met" });
-                break;
-              case "check_aml_requirement":
-                actionsTaken.push(`Checked AML ${toolInput.check_type}`);
-                result = JSON.stringify({ compliant: true, notes: "AML check passed" });
-                break;
-              case "check_eidas_requirement":
-                actionsTaken.push(`Checked eIDAS ${toolInput.requirement_type}`);
-                result = JSON.stringify({ compliant: true, notes: "eIDAS requirement met" });
-                break;
-              case "record_finding":
-                findings.push({
-                  id: toolInput.id as string,
-                  severity: toolInput.severity as "low" | "medium" | "high" | "critical",
-                  regulation: toolInput.regulation as string,
-                  description: toolInput.description as string,
-                  recommendation: toolInput.recommendation as string,
-                });
-                actionsTaken.push(`Recorded finding: ${toolInput.id}`);
-                result = JSON.stringify({ recorded: true, finding_id: toolInput.id });
-                break;
-              case "calculate_score":
-                const deductions = (toolInput.deductions as Array<{ points: number }>) || [];
-                score = (toolInput.base_score as number) - deductions.reduce((sum, d) => sum + d.points, 0);
-                actionsTaken.push(`Calculated score: ${score}`);
-                result = JSON.stringify({ final_score: score });
-                break;
-              default:
-                result = JSON.stringify({ error: "Unknown tool" });
-            }
-
-            toolResults.push({
-              type: "tool_result",
-              tool_use_id: block.id,
-              content: result,
-            });
-          }
-        }
-
-        // If no tool use, we're done
-        if (!hasToolUse) {
-          // Extract final analysis from text response
-          const textBlock = response.content.find((b) => b.type === "text");
-          return {
-            analysis: textBlock ? (textBlock as Anthropic.TextBlock).text : "Analysis complete",
-            findings,
-            score: Math.max(0, Math.min(100, score)),
-            actions_taken: actionsTaken,
-          };
-        }
-
-        // Add assistant response and tool results for next iteration
-        messages = [
-          ...messages,
-          { role: "assistant", content: response.content },
-          { role: "user", content: toolResults },
-        ];
-
-        // Check stop reason
-        if (response.stop_reason === "end_turn") {
-          const textBlock = response.content.find((b) => b.type === "text");
-          return {
-            analysis: textBlock ? (textBlock as Anthropic.TextBlock).text : "Analysis complete",
-            findings,
-            score: Math.max(0, Math.min(100, score)),
-            actions_taken: actionsTaken,
-          };
-        }
+      if (response.stop_reason !== "tool_use") {
+        return { analysis: textOf(response) || "Analysis complete", findings, score: scoreFindings(findings), actions_taken: actions, mode: "agentic" };
       }
 
-      return {
-        analysis: "Compliance analysis completed",
-        findings,
-        score: Math.max(0, Math.min(100, score)),
-        actions_taken: actionsTaken,
-      };
-    } catch (error) {
-      console.error("Agent compliance analysis failed:", error);
-      return this.getDemoResult(frameworks);
-    }
-  }
-
-  async assessRisk(
-    entity: string,
-    entityType: string,
-    context?: string
-  ): Promise<RiskAgentResult> {
-    if (!this.client) {
-      return this.getDemoRiskResult(entity);
-    }
-
-    try {
-      const response = await this.client.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1024,
-        messages: [
-          {
-            role: "user",
-            content: `Perform a risk assessment for:
-Entity: ${entity}
-Type: ${entityType}
-${context ? `Context: ${context}` : ""}
-
-Evaluate across: regulatory compliance, operational, reputational, and financial crime risk.
-
-Return JSON:
-{
-  "entity": "${entity}",
-  "risk_level": "low|medium|high|critical",
-  "score": 0-100,
-  "factors": [{"name": "...", "score": 0-100, "rationale": "..."}],
-  "recommendations": ["..."]
-}`,
-          },
-        ],
-      });
-
-      const textBlock = response.content.find((b) => b.type === "text");
-      if (textBlock) {
-        const jsonMatch = (textBlock as Anthropic.TextBlock).text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]) as RiskAgentResult;
-        }
+      // Run every tool call from this turn, then return all results in one user message.
+      const results: BetaToolResultBlockParam[] = [];
+      for (const block of response.content) {
+        if (block.type !== "tool_use") continue;
+        const { content: result, isError } = this.runTool(block.name, block.input as Record<string, unknown>, findings, actions);
+        results.push({ type: "tool_result", tool_use_id: block.id, content: result, ...(isError && { is_error: true }) });
       }
+      // Pass the assistant turn back unchanged (it may include thinking blocks).
+      messages = [...messages, { role: "assistant", content: response.content }, { role: "user", content: results }];
+    }
 
-      return this.getDemoRiskResult(entity);
-    } catch (error) {
-      console.error("Agent risk assessment failed:", error);
-      return this.getDemoRiskResult(entity);
+    actions.push(`Stopped after ${MAX_AGENT_TURNS} turns`);
+    return { analysis: "Analysis stopped at the turn limit; findings so far are listed.", findings, score: scoreFindings(findings), actions_taken: actions, mode: "agentic" };
+  }
+
+  /** Execute one tool call. Invalid input returns an error result so the model can correct itself. */
+  runTool(
+    name: string,
+    input: Record<string, unknown>,
+    findings: Finding[],
+    actions: string[]
+  ): { content: string; isError: boolean } {
+    switch (name) {
+      case "search_regulations": {
+        const query = String(input.query ?? "");
+        const hits = this.rag.search(query, 3).map(({ article }) => ({
+          article_id: article.id,
+          title: article.title,
+          summary: article.summary,
+          relevance: article.relevance,
+        }));
+        actions.push(`Searched regulations: "${query}" (${hits.length} hits)`);
+        return { content: JSON.stringify(hits), isError: false };
+      }
+      case "scan_pii": {
+        const pii = scanPII(String(input.excerpt ?? ""));
+        actions.push(`Scanned excerpt for PII (${pii.length} types found)`);
+        return { content: JSON.stringify(pii), isError: false };
+      }
+      case "record_finding": {
+        const severity = input.severity as Severity;
+        const articleId = String(input.article_id ?? "");
+        if (!SEVERITIES.has(severity)) {
+          return { content: `Invalid severity "${severity}"`, isError: true };
+        }
+        if (!ARTICLE_IDS.has(articleId)) {
+          return { content: `Unknown article_id "${articleId}". Use search_regulations to find a valid id.`, isError: true };
+        }
+        const article = ARTICLES.find((a) => a.id === articleId)!;
+        const finding: Finding = {
+          id: `${article.framework.toUpperCase()}-${String(findings.length + 1).padStart(3, "0")}`,
+          severity,
+          regulation: article.title,
+          article_id: articleId,
+          description: String(input.description ?? ""),
+          recommendation: String(input.recommendation ?? ""),
+        };
+        findings.push(finding);
+        actions.push(`Recorded ${finding.id} (${severity}, ${articleId})`);
+        return { content: JSON.stringify({ recorded: finding.id }), isError: false };
+      }
+      default:
+        return { content: `Unknown tool "${name}"`, isError: true };
     }
   }
 
-  private getDemoResult(frameworks: string[]): ComplianceAgentResult {
-    return {
-      analysis: "Demo compliance analysis - Configure ANTHROPIC_API_KEY for real agentic analysis",
-      findings: frameworks.map((f, i) => ({
-        id: `${f.toUpperCase()}-00${i + 1}`,
-        severity: (["low", "medium", "high"] as const)[i % 3],
-        regulation: f.toUpperCase(),
-        description: `Sample finding for ${f} compliance review`,
-        recommendation: `Review ${f} requirements and update implementation`,
-      })),
-      score: 87,
-      actions_taken: ["Demo mode - simulated analysis"],
-    };
-  }
+  async assessRisk(entity: string, entityType: string, context?: string): Promise<RiskAgentResult> {
+    if (!this.llm) return demoRiskResult(entity);
 
-  private getDemoRiskResult(entity: string): RiskAgentResult {
-    return {
-      entity,
-      risk_level: "medium",
-      score: 45,
-      factors: [
-        { name: "Regulatory Compliance", score: 35, rationale: "Demo assessment" },
-        { name: "Operational Risk", score: 50, rationale: "Demo assessment" },
-        { name: "Financial Crime", score: 45, rationale: "Demo assessment" },
-      ],
-      recommendations: [
-        "Configure ANTHROPIC_API_KEY for real agentic risk assessment",
-        "Review entity documentation",
-        "Implement continuous monitoring",
-      ],
-    };
+    const result = await this.llm.json<Omit<RiskAgentResult, "entity" | "mode">>(
+      "You are a KYC/AML risk analyst. Evaluate regulatory compliance, operational, reputational and financial crime risk. Scores are 0-100.",
+      `Entity: ${entity}\nType: ${entityType}${context ? `\nContext: ${context}` : ""}`,
+      RISK_SCHEMA
+    );
+    return { entity, ...result, mode: "agentic" };
   }
+}
+
+const RISK_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["risk_level", "score", "factors", "recommendations"],
+  properties: {
+    risk_level: { type: "string", enum: ["low", "medium", "high", "critical"] },
+    score: { type: "integer" },
+    factors: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "score", "rationale"],
+        properties: { name: { type: "string" }, score: { type: "integer" }, rationale: { type: "string" } },
+      },
+    },
+    recommendations: { type: "array", items: { type: "string" } },
+  },
+};
+
+function demoComplianceResult(frameworks: string[]): ComplianceAgentResult {
+  const findings: Finding[] = frameworks.map((f, i) => ({
+    id: `${f.toUpperCase()}-00${i + 1}`,
+    severity: (["low", "medium", "high"] as const)[i % 3],
+    regulation: f.toUpperCase(),
+    article_id: "",
+    description: `Sample finding for ${f} compliance review`,
+    recommendation: `Review ${f} requirements and update implementation`,
+  }));
+  return {
+    analysis: "Demo mode: set ANTHROPIC_API_KEY for a real agentic review. These findings are illustrative.",
+    findings,
+    score: scoreFindings(findings),
+    actions_taken: ["Demo mode - no analysis performed"],
+    mode: "demo",
+  };
+}
+
+function demoRiskResult(entity: string): RiskAgentResult {
+  return {
+    entity,
+    risk_level: "medium",
+    score: 45,
+    factors: [
+      { name: "Regulatory Compliance", score: 35, rationale: "Demo assessment" },
+      { name: "Operational Risk", score: 50, rationale: "Demo assessment" },
+      { name: "Financial Crime", score: 45, rationale: "Demo assessment" },
+    ],
+    recommendations: ["Set ANTHROPIC_API_KEY for a real assessment"],
+    mode: "demo",
+  };
 }

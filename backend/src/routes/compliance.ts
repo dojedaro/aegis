@@ -2,13 +2,27 @@ import { Router } from "express";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { query, run, get } from "../db/schema.js";
-import { ClaudeService } from "../services/claude.js";
+import { ClaudeService, ResultSource } from "../services/claude.js";
+import { PaginationSchema, pageParams, whereClause } from "./list-query.js";
+
+const ComplianceListQuery = PaginationSchema.extend({
+  status: z.enum(["pending", "running", "completed", "failed"]).optional(),
+});
+
+type Framework = "gdpr" | "eidas" | "aml" | "eu-ai-act";
+
+const SAMPLE_RESULTS: Record<Framework, { score: number; findings: { id: string; severity: string; message: string }[] }> = {
+  gdpr: { score: 92, findings: [] },
+  eidas: { score: 87, findings: [{ id: "EIDAS-001", severity: "low", message: "Wallet integration pending" }] },
+  aml: { score: 95, findings: [] },
+  "eu-ai-act": { score: 78, findings: [{ id: "AI-001", severity: "medium", message: "Human oversight documentation needed" }] },
+};
 
 const ComplianceCheckSchema = z.object({
-  target: z.string().min(1),
+  target: z.string().min(1).max(500),
   target_type: z.enum(["file", "customer", "config", "process"]),
   frameworks: z.array(z.enum(["gdpr", "eidas", "aml", "eu-ai-act"])).min(1),
-  content: z.string().optional(),
+  content: z.string().max(100_000).optional(),
 });
 
 export function createComplianceRouter(claudeService: ClaudeService): Router {
@@ -41,18 +55,12 @@ export function createComplianceRouter(claudeService: ClaudeService): Router {
    *         description: List of compliance checks
    */
   router.get("/", (req, res) => {
-    const { status, page = "1", limit = "20" } = req.query;
-
-    let statusFilter = "";
-    if (status) {
-      statusFilter = `WHERE status = '${status}'`;
-    }
-
-    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const { status, ...pagination } = ComplianceListQuery.parse(req.query);
+    const where = whereClause({ status });
 
     const checks = query(
-      `SELECT * FROM compliance_checks ${statusFilter} ORDER BY started_at DESC LIMIT ? OFFSET ?`,
-      [parseInt(limit as string), offset]
+      `SELECT * FROM compliance_checks ${where.sql} ORDER BY started_at DESC LIMIT ? OFFSET ?`,
+      [...where.params, ...pageParams(pagination)]
     );
 
     const parsed = checks.map((c: any) => ({
@@ -103,69 +111,62 @@ export function createComplianceRouter(claudeService: ClaudeService): Router {
    *         description: Validation error
    */
   router.post("/check", async (req, res) => {
-    try {
-      const data = ComplianceCheckSchema.parse(req.body);
+    const data = ComplianceCheckSchema.parse(req.body);
 
-      const id = randomUUID();
-      const startedAt = new Date().toISOString();
+    const id = randomUUID();
+    const startedAt = new Date().toISOString();
+    run(
+      `INSERT INTO compliance_checks (id, target, target_type, frameworks, status, checked_by, started_at) VALUES (?, ?, ?, ?, 'running', 'api', ?)`,
+      [id, data.target, data.target_type, JSON.stringify(data.frameworks), startedAt]
+    );
 
-      run(
-        `INSERT INTO compliance_checks (id, target, target_type, frameworks, status, checked_by, started_at) VALUES (?, ?, ?, ?, 'running', 'api', ?)`,
-        [id, data.target, data.target_type, JSON.stringify(data.frameworks), startedAt]
-      );
+    let results: unknown;
+    let score: number;
+    let source: ResultSource;
 
-      let results: any = {};
-      let score = 100;
-
-      if (data.content) {
+    if (data.content) {
+      try {
         const analysis = await claudeService.analyzeCompliance(data.content, data.frameworks);
-        try {
-          const parsed = JSON.parse(analysis.content);
-          results = parsed;
-          score = parsed.score ?? 100;
-        } catch {
-          results = { raw: analysis.content, cached: analysis.cached };
-        }
-      } else {
-        results = {
-          gdpr: { score: 92, findings: [] },
-          eidas: { score: 87, findings: [{ id: "EIDAS-001", severity: "low", message: "Wallet integration pending" }] },
-          aml: { score: 95, findings: [] },
-          "eu-ai-act": { score: 78, findings: [{ id: "AI-001", severity: "medium", message: "Human oversight documentation needed" }] },
-        };
-        score = Math.round(
-          data.frameworks.reduce((sum, f) => sum + (results[f]?.score ?? 100), 0) / data.frameworks.length
-        );
+        ({ data: results, source } = analysis);
+        score = Math.max(0, Math.min(100, analysis.data.score));
+      } catch (error) {
+        // Record the failure honestly instead of storing fabricated results.
+        console.error("Compliance analysis failed:", error);
+        run(`UPDATE compliance_checks SET status = 'failed', completed_at = ? WHERE id = ?`, [new Date().toISOString(), id]);
+        return res.status(502).json({ id, status: "failed", error: "AI analysis failed; please retry" });
       }
-
-      run(
-        `UPDATE compliance_checks SET status = 'completed', results = ?, score = ?, completed_at = ? WHERE id = ?`,
-        [JSON.stringify(results), score, new Date().toISOString(), id]
-      );
-
-      run(
-        `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, 'api', 'compliance_check', ?, ?, 1)`,
-        [randomUUID(), new Date().toISOString(), data.target, score < 80 ? "high" : score < 90 ? "medium" : "low"]
-      );
-
-      res.status(201).json({
-        id,
-        target: data.target,
-        frameworks: data.frameworks,
-        status: "completed",
-        score,
-        results,
-        started_at: startedAt,
-        completed_at: new Date().toISOString(),
-        ai_enabled: claudeService.isEnabled,
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Validation failed", details: error.errors });
-      } else {
-        throw error;
-      }
+    } else {
+      // No content supplied: return the illustrative dashboard sample, explicitly labeled.
+      const sample = SAMPLE_RESULTS;
+      results = sample;
+      source = "demo";
+      score = Math.round(data.frameworks.reduce((sum, f) => sum + sample[f].score, 0) / data.frameworks.length);
     }
+
+    const completedAt = new Date().toISOString();
+    run(`UPDATE compliance_checks SET status = 'completed', results = ?, score = ?, completed_at = ? WHERE id = ?`, [
+      JSON.stringify(results),
+      score,
+      completedAt,
+      id,
+    ]);
+    run(
+      `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, ?, 'compliance_check', ?, ?, 1)`,
+      [randomUUID(), completedAt, req.user?.email ?? "anonymous", data.target, score < 80 ? "high" : score < 90 ? "medium" : "low"]
+    );
+
+    res.status(201).json({
+      id,
+      target: data.target,
+      frameworks: data.frameworks,
+      status: "completed",
+      score,
+      results,
+      source,
+      started_at: startedAt,
+      completed_at: completedAt,
+      ai_enabled: claudeService.isEnabled,
+    });
   });
 
   // GET /api/compliance/:id - Get specific check

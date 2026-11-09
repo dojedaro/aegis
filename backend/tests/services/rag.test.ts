@@ -39,6 +39,17 @@ describe("RAGService", () => {
       expect(results.length).toBeLessThanOrEqual(3);
     });
 
+    it("ranks the most specific article first (BM25)", () => {
+      expect(ragService.search("record keeping retention 5 years")[0].article.id).toBe("aml-art-40");
+      expect(ragService.search("human oversight of automated decisions")[0].article.framework).toMatch(/eu-ai-act|gdpr/);
+      expect(ragService.search("right to be forgotten erasure")[0].article.id).toBe("gdpr-art-17");
+    });
+
+    it("returns results sorted by descending score", () => {
+      const scores = ragService.search("biometric identity verification").map((r) => r.score);
+      expect(scores).toEqual([...scores].sort((a, b) => b - a));
+    });
+
     it("should return empty array for irrelevant queries", () => {
       const results = ragService.search("xyznonexistent123");
       expect(results.length).toBe(0);

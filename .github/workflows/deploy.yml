@@ -33,11 +33,11 @@ jobs:
 
             ### Features
             - AI-powered compliance checking with Claude API
-            - RAG-based regulation search (27 articles)
+            - RAG-based regulation Q&A (BM25 over 26 curated articles)
             - Real-time PII detection
             - Risk assessment engine
-            - Audit trail with immutable logging
-            - JWT authentication
+            - Append-only audit trail with role-based write access
+            - JWT authentication with RBAC
 
             ### Supported Frameworks
             - GDPR

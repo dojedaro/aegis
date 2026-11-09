@@ -2,12 +2,30 @@ import { Router, Request, Response } from "express";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { query, run, get } from "../db/schema.js";
-import { ClaudeService } from "../services/claude.js";
+import { ClaudeService, ResultSource, RiskAnalysis } from "../services/claude.js";
+import { RuleBasedRisk, assessRiskByRules } from "../services/risk-rules.js";
+import { PaginationSchema, pageParams, whereClause } from "./list-query.js";
+
+const EntityType = z.enum(["customer", "transaction", "process", "vendor"]);
+
+const RiskListQuery = PaginationSchema.extend({
+  level: z.enum(["low", "medium", "high", "critical"]).optional(),
+  entity_type: EntityType.optional(),
+});
 
 const RiskAssessmentSchema = z.object({
-  entity_id: z.string().min(1),
-  entity_type: z.enum(["customer", "transaction", "process", "vendor"]),
-  data: z.record(z.any()).optional(),
+  entity_id: z.string().min(1).max(200),
+  entity_type: EntityType,
+  data: z
+    .object({
+      high_risk_jurisdiction: z.boolean().optional(),
+      pep: z.boolean().optional(),
+      sanctions_hit: z.boolean().optional(),
+      adverse_media: z.boolean().optional(),
+      relationship_years: z.number().min(0).max(200).optional(),
+    })
+    .passthrough()
+    .optional(),
 });
 
 export function createRiskRouter(claudeService: ClaudeService): Router {
@@ -15,18 +33,12 @@ export function createRiskRouter(claudeService: ClaudeService): Router {
 
   // GET /api/risk - List risk assessments
   router.get("/", (req: Request, res: Response) => {
-    const { level, entity_type, page = "1", limit = "20" } = req.query;
-
-    let filters = [];
-    if (level) filters.push(`risk_level = '${level}'`);
-    if (entity_type) filters.push(`entity_type = '${entity_type}'`);
-
-    const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
-    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const { level, entity_type, ...pagination } = RiskListQuery.parse(req.query);
+    const where = whereClause({ risk_level: level, entity_type });
 
     const assessments = query(
-      `SELECT * FROM risk_assessments ${whereClause} ORDER BY assessed_at DESC LIMIT ? OFFSET ?`,
-      [parseInt(limit as string), offset]
+      `SELECT * FROM risk_assessments ${where.sql} ORDER BY assessed_at DESC LIMIT ? OFFSET ?`,
+      [...where.params, ...pageParams(pagination)]
     );
 
     const parsed = assessments.map((a: any) => ({
@@ -39,55 +51,85 @@ export function createRiskRouter(claudeService: ClaudeService): Router {
   });
 
   // POST /api/risk/assess - Run risk assessment
+  /**
+   * @swagger
+   * /api/risk/assess:
+   *   post:
+   *     summary: Assess KYC/AML risk for an entity
+   *     description: Deterministic rule-based scoring; refined by Claude when an API key is configured and `data` is given. The `source` field says which produced the result.
+   *     tags: [Risk]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [entity_id, entity_type]
+   *             properties:
+   *               entity_id: { type: string }
+   *               entity_type: { type: string, enum: [customer, transaction, process, vendor] }
+   *               data:
+   *                 type: object
+   *                 properties:
+   *                   high_risk_jurisdiction: { type: boolean }
+   *                   pep: { type: boolean }
+   *                   sanctions_hit: { type: boolean }
+   *                   adverse_media: { type: boolean }
+   *                   relationship_years: { type: number }
+   *           example:
+   *             entity_id: "C-1001"
+   *             entity_type: "customer"
+   *             data: { pep: true, relationship_years: 2 }
+   *     responses:
+   *       201:
+   *         description: Risk assessment (score, level, factors, recommendations, source)
+   *       400:
+   *         description: Validation error
+   */
   router.post("/assess", async (req: Request, res: Response) => {
-    try {
-      const data = RiskAssessmentSchema.parse(req.body);
+    const data = RiskAssessmentSchema.parse(req.body);
 
-      let results: any;
-
-      if (data.data && claudeService.isEnabled) {
-        const analysis = await claudeService.assessRisk(JSON.stringify(data.data));
-        try {
-          results = JSON.parse(analysis.content);
-        } catch {
-          results = getDefaultRiskAssessment(data.entity_type);
-        }
-      } else {
-        results = getDefaultRiskAssessment(data.entity_type);
-      }
-
-      const id = randomUUID();
-      const assessedAt = new Date().toISOString();
-
-      const nextReview = new Date();
-      nextReview.setMonth(nextReview.getMonth() + (results.level === "high" || results.level === "critical" ? 1 : 3));
-
-      run(
-        `INSERT INTO risk_assessments (id, entity_id, entity_type, overall_score, risk_level, factors, recommendations, assessed_by, assessed_at, next_review) VALUES (?, ?, ?, ?, ?, ?, ?, 'api', ?, ?)`,
-        [id, data.entity_id, data.entity_type, results.score, results.level, JSON.stringify(results.factors), JSON.stringify(results.recommendations), assessedAt, nextReview.toISOString()]
-      );
-
-      run(
-        `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, 'api', 'risk_assessment', ?, ?, 1)`,
-        [randomUUID(), assessedAt, `${data.entity_type}:${data.entity_id}`, results.level]
-      );
-
-      res.status(201).json({
-        id,
-        entity_id: data.entity_id,
-        entity_type: data.entity_type,
-        ...results,
-        assessed_at: assessedAt,
-        next_review: nextReview.toISOString(),
-        ai_enabled: claudeService.isEnabled,
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Validation failed", details: error.errors });
-      } else {
-        throw error;
+    // Rules always run; AI (when configured and given data) refines them. Every response
+    // states which one produced it.
+    let results: RuleBasedRisk | RiskAnalysis = assessRiskByRules(data.entity_type, data.data);
+    let source: ResultSource | "rules" = "rules";
+    let aiError: string | undefined;
+    if (data.data && claudeService.isEnabled) {
+      try {
+        const analysis = await claudeService.assessRisk(JSON.stringify({ entity_type: data.entity_type, ...data.data }));
+        results = analysis.data;
+        source = analysis.source;
+      } catch (error) {
+        console.error("AI risk assessment failed, using rule-based result:", error);
+        aiError = "AI assessment unavailable; rule-based result returned";
       }
     }
+
+    const id = randomUUID();
+    const assessedAt = new Date().toISOString();
+    const nextReview = new Date();
+    nextReview.setMonth(nextReview.getMonth() + (results.level === "high" || results.level === "critical" ? 1 : 3));
+
+    run(
+      `INSERT INTO risk_assessments (id, entity_id, entity_type, overall_score, risk_level, factors, recommendations, assessed_by, assessed_at, next_review) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, data.entity_id, data.entity_type, results.score, results.level, JSON.stringify(results.factors), JSON.stringify(results.recommendations), source, assessedAt, nextReview.toISOString()]
+    );
+    run(
+      `INSERT INTO audit_entries (id, timestamp, actor, action, resource, risk_level, compliance_relevant) VALUES (?, ?, ?, 'risk_assessment', ?, ?, 1)`,
+      [randomUUID(), assessedAt, req.user?.email ?? "anonymous", `${data.entity_type}:${data.entity_id}`, results.level]
+    );
+
+    res.status(201).json({
+      id,
+      entity_id: data.entity_id,
+      entity_type: data.entity_type,
+      ...results,
+      source,
+      ai_error: aiError,
+      assessed_at: assessedAt,
+      next_review: nextReview.toISOString(),
+      ai_enabled: claudeService.isEnabled,
+    });
   });
 
   // GET /api/risk/:id - Get specific assessment
@@ -139,34 +181,4 @@ export function createRiskRouter(claudeService: ClaudeService): Router {
   });
 
   return router;
-}
-
-function getDefaultRiskAssessment(entityType: string): any {
-  const baseFactors = [
-    { name: "Geographic Risk", score: Math.floor(Math.random() * 3) + 1, reason: "Standard jurisdiction" },
-    { name: "Transaction Pattern", score: Math.floor(Math.random() * 3) + 2, reason: "Normal activity levels" },
-    { name: "Entity Profile", score: Math.floor(Math.random() * 2) + 1, reason: "Verified documentation" },
-    { name: "Relationship Duration", score: Math.floor(Math.random() * 2) + 1, reason: "Established relationship" },
-  ];
-
-  if (entityType === "customer") {
-    baseFactors.push({ name: "PEP Exposure", score: Math.floor(Math.random() * 3) + 1, reason: "No direct PEP connection" });
-  }
-
-  const score = baseFactors.reduce((sum, f) => sum + f.score, 0);
-  let level: string;
-
-  if (score <= 6) level = "low";
-  else if (score <= 12) level = "medium";
-  else if (score <= 18) level = "high";
-  else level = "critical";
-
-  const recommendations =
-    level === "low"
-      ? ["Standard monitoring", "Annual review"]
-      : level === "medium"
-        ? ["Enhanced monitoring", "Quarterly review"]
-        : ["Enhanced Due Diligence required", "Monthly review", "Senior approval needed"];
-
-  return { score, level, factors: baseFactors, recommendations };
 }

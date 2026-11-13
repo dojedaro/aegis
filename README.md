@@ -19,6 +19,8 @@
 
 > **Note:** First API request may take ~30 seconds to initialize (free tier cold start)
 
+![Aegis compliance dashboard](docs/screenshots/overview.png)
+
 </div>
 
 ---
@@ -139,6 +141,16 @@ This is a portfolio piece demonstrating proficiency in **AI-enabled development*
 2. **Hooks for guardrails** — Deterministic checks that run before/after AI operations
 3. **MCP for extensibility** — Custom tools that give Claude domain-specific capabilities
 4. **Subagents for expertise** — Deep domain knowledge encoded in specialized prompts
+
+### Tech Stack
+
+| Layer | Built with |
+|---|---|
+| AI | Claude API (`@anthropic-ai/sdk`), Claude Sonnet 5.5 by default (set `AEGIS_MODEL` to change it), with server-side refusal fallbacks; MCP server (`@modelcontextprotocol/sdk`) exposing compliance tools |
+| Backend | Node.js, Express, TypeScript, Zod validation, SQLite (sql.js), JWT auth, Helmet, rate limiting, Swagger/OpenAPI docs |
+| Frontend | TypeScript + Vite (no framework), deployed on Vercel |
+| Quality | Vitest (backend), Playwright (end-to-end), GitHub Actions CI, Docker Compose |
+| Hosting | Render (API) and Vercel (web); deploys run from `main` |
 
 ---
 
@@ -404,6 +416,16 @@ Services:
 
 ---
 
+## 📊 Results and Quality
+
+- **75 backend tests pass in about 5 seconds with no API key** (8 files: routes for AI, compliance,
+  PII and security, plus the agent, LLM, RAG and risk-rule services). Tests inject a fake Claude
+  client, so the suite never spends money; without a key the app itself runs in demo mode
+  (extractive answers and rule-based checks).
+- **17 Playwright end-to-end tests** cover the dashboard.
+- **Cost guardrail:** the live AI endpoints share a daily request cap (`AI_DAILY_REQUEST_LIMIT`,
+  default 1,000), so a public demo can't run up an unbounded bill.
+
 ## 🧪 Testing
 
 ### Backend Tests (Vitest)
@@ -454,6 +476,16 @@ The `examples/` folder contains realistic synthetic data for testing:
 | `customer-data.json` | Full KYC flow example with documents and screening results |
 
 ---
+
+## ⚠️ Limitations
+
+- **Demo data, not a customer deployment.** Compliance percentages, audit events and credentials come
+  from seeded sample data (see the note below); the scores show how the platform reports, not a real
+  organization's posture.
+- **Regulatory answers need review.** The RAG search grounds answers in stored regulation text, but it
+  is a research aid, not legal advice.
+- **SQLite on the API host's disk.** Render's free tier has an ephemeral disk, so demo data resets on
+  each deploy; production would use a managed database.
 
 ## 🔗 Links
 

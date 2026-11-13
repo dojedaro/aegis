@@ -42,10 +42,11 @@ export function createCredentialsRouter(): Router {
       const id = randomUUID();
       const now = new Date();
 
-      const checks = {
-        format: { passed: true, message: "Valid JSON-LD format" },
-        issuer: { passed: true, message: `Issuer ${data.issuer} is trusted` },
-        signature: { passed: true, message: "Cryptographic signature valid" },
+      // passed: null means the check is not performed in this demo. Never report a check that didn't run.
+      const checks: Record<string, { passed: boolean | null; message: string }> = {
+        format: { passed: true, message: "Required fields present (type, issuer, subject, issue date)" },
+        issuer: { passed: null, message: `Issuer ${data.issuer} recorded; trust not checked (no trust registry in this demo)` },
+        signature: { passed: null, message: "Not checked: cryptographic signature verification is not implemented in this demo" },
         expiry: {
           passed: !data.expires_at || new Date(data.expires_at) > now,
           message: data.expires_at
@@ -54,10 +55,10 @@ export function createCredentialsRouter(): Router {
               : "Credential has expired"
             : "No expiry date",
         },
-        schema: { passed: true, message: "Schema validation passed" },
       };
 
-      const allPassed = Object.values(checks).every((c) => c.passed);
+      // Status reflects only the checks that ran; unverified signatures are reported, not assumed.
+      const allPassed = Object.values(checks).every((c) => c.passed !== false);
       const status = allPassed ? "valid" : data.expires_at && new Date(data.expires_at) <= now ? "expired" : "invalid";
 
       run(
@@ -76,6 +77,7 @@ export function createCredentialsRouter(): Router {
         issuer: data.issuer,
         subject: data.subject,
         status,
+        signature_verified: false,
         checks,
         verified_at: now.toISOString(),
         eidas_mapping: {

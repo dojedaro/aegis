@@ -304,13 +304,12 @@ export class CredentialViewer {
       // Issuer check
       const hasIssuer = !!credential.issuer;
       const issuerId = typeof credential.issuer === "string" ? credential.issuer : credential.issuer?.id;
-      const issuerTrusted = hasIssuer && issuerId?.includes("government");
       checks.push({
         name: "Issuer",
-        passed: issuerTrusted,
-        details: issuerTrusted ? "Trusted issuer" : hasIssuer ? "Issuer not in trusted list" : "No issuer",
+        passed: hasIssuer,
+        details: hasIssuer ? "Issuer present (trust not verified: no trust registry in this demo)" : "No issuer",
       });
-      if (!issuerTrusted && hasIssuer) warnings.push("Issuer not in trusted list");
+      if (hasIssuer) warnings.push("Issuer trust not verified (no trust registry in this demo)");
 
       // Expiry check
       const expiryDate = credential.expirationDate ? new Date(credential.expirationDate) : null;
@@ -327,7 +326,7 @@ export class CredentialViewer {
       checks.push({
         name: "Proof",
         passed: hasProof,
-        details: hasProof ? `${credential.proof.type} present` : "Missing or incomplete proof",
+        details: hasProof ? `${credential.proof.type} present (signature not verified in this demo)` : "Missing or incomplete proof",
       });
       if (!hasProof) errors.push("Missing cryptographic proof");
 

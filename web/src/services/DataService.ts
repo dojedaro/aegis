@@ -188,12 +188,12 @@ class DataService {
       {
         name: 'Signature',
         passed: credential.verificationResult.signatureValid,
-        message: credential.verificationResult.signatureValid ? 'Valid cryptographic signature' : 'Invalid signature'
+        message: credential.verificationResult.signatureValid ? 'Valid signature (sample data, not computed)' : 'Invalid signature (sample data, not computed)'
       },
       {
         name: 'Issuer Trust',
         passed: credential.verificationResult.issuerTrusted,
-        message: credential.verificationResult.issuerTrusted ? `Trusted issuer: ${credential.issuer.name}` : 'Issuer not in trust registry'
+        message: credential.verificationResult.issuerTrusted ? `Trusted issuer: ${credential.issuer.name} (sample data)` : 'Issuer not in trust registry (sample data)'
       },
       {
         name: 'Expiry',

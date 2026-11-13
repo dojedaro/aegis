@@ -13,36 +13,20 @@ export class AboutDemo {
       <div class="about-hero">
         <h2>Transforming Compliance with AI Agents</h2>
         <p>
-          From hours to seconds — this platform demonstrates how AI agents can automate
-          complex regulatory workflows that traditionally require specialized teams.
+          A Claude agent reviews systems against GDPR, eIDAS 2.0, AML/KYC and the EU AI Act. Its tools do the
+          parts that must be exact, so its findings cite real regulation articles.
         </p>
       </div>
 
-      <div class="about-section" style="background: linear-gradient(135deg, var(--color-primary-subtle), transparent); margin-bottom: var(--space-8);">
-        <h3 style="color: var(--color-text);">🎯 The Impact</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-6); margin-top: var(--space-6);">
-          <div style="text-align: center;">
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary);">4-8 hrs</div>
-            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">Traditional Review</div>
-            <div style="font-size: 1.5rem; margin: 0.5rem 0;">→</div>
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-success);">&lt; 30s</div>
-            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">With Aegis</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary);">1</div>
-            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">Framework at a time</div>
-            <div style="font-size: 1.5rem; margin: 0.5rem 0;">→</div>
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-success);">3+</div>
-            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">Simultaneous</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary);">Weeks</div>
-            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">Audit Preparation</div>
-            <div style="font-size: 1.5rem; margin: 0.5rem 0;">→</div>
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-success);">Real-time</div>
-            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">Continuous</div>
-          </div>
-        </div>
+      <div class="about-section" style="margin-bottom: var(--space-8);">
+        <h3 style="color: var(--color-text);">How the agent works</h3>
+        <ul>
+          <li><strong>search_regulations</strong>: BM25 retrieval over a curated library of regulation articles.</li>
+          <li><strong>scan_pii</strong>: rule-based detection of personal data; the same input always gets the same result.</li>
+          <li><strong>record_finding</strong>: rejects any finding whose cited article doesn't exist, so citations can't be invented.</li>
+        </ul>
+        <p style="color: var(--color-text-muted);">Not yet measured: how many real violations the agent finds. Credential
+          signatures are not cryptographically verified in this demo, and the dashboard uses sample data.</p>
       </div>
 
       <div class="about-grid">
@@ -109,7 +93,7 @@ export class AboutDemo {
 
 <span style="color: var(--color-primary);">4. HOOKS FIRE</span>
    → audit_logger records the operation
-   → Results logged to immutable audit trail
+   → Results logged to the audit trail
 
 <span style="color: var(--color-primary);">5. REPORT GENERATED</span>
    → Structured compliance report returned

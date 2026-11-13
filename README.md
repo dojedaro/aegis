@@ -52,7 +52,7 @@ This shows how domain guardrails can be enforced deterministically around an AI 
 | **Skills** | 5 | Orchestrate complex compliance workflows |
 | **MCP Tools** | 5 | Extend Claude with domain-specific capabilities |
 | **Hooks** | 3 | Deterministic guardrails (PII blocking, audit logging) |
-| **Subagents** | 4 | Specialized AI experts for deep analysis |
+| **Subagents** | 4 | Role-specific prompts (regulatory analyst, risk assessor, audit documenter, security reviewer) |
 
 ### Specialized AI Subagents
 
@@ -68,7 +68,7 @@ This shows how domain guardrails can be enforced deterministically around an AI 
 - **Regulatory Checking** — Analyze code against GDPR, eIDAS 2.0, AML/KYC, EU AI Act
 - **Risk Assessment** — Score entities using standard risk matrices
 - **Audit Trail** — Append-only evidence log; writes require an analyst/admin token and record the authenticated actor
-- **Credential Verification** — Validate W3C Verifiable Credentials
+- **Credential checks** — Structural checks of W3C Verifiable Credentials (required fields, expiry, proof present); signatures are not cryptographically verified yet
 - **Incident Response** — Guided compliance incident workflows
 - **PII Protection** — Automatic detection and blocking of sensitive data
 - **RAG-Powered Q&A** — BM25 retrieval over 26 curated regulation articles; answers cite articles and link to EUR-Lex
@@ -415,9 +415,9 @@ npm run test:e2e:ui      # Interactive UI mode
 **[View Live Demo →](https://aegis-web-xi.vercel.app)**
 
 The live dashboard includes:
-- **Compliance Dashboard** — Real-time compliance status across GDPR, eIDAS 2.0, AML/KYC, and EU AI Act
+- **Compliance Dashboard** — Compliance status across GDPR, eIDAS 2.0, AML/KYC, and EU AI Act (sample data)
 - **Risk Matrix** — Interactive likelihood × impact visualization
-- **Audit Trail** — Immutable compliance event log with filtering and export
+- **Audit Trail** — Compliance event log with filtering and export
 - **Credential Verification** — W3C Verifiable Credential validation
 - **Regulation Search** — RAG-powered Q&A about regulatory requirements
 
@@ -442,6 +442,12 @@ The `examples/` folder contains realistic synthetic data for testing:
 ---
 
 ## ⚠️ Limitations
+
+- **Credential signatures are not verified.** The verify endpoint checks required fields and expiry and
+  reports the signature and issuer trust as *not checked*. Real verification (a trust registry of issuer
+  keys and Ed25519 signature checks) is the next step.
+- **The agent's review quality is not measured yet.** A test set of documents with planted violations
+  would report how many it finds and how many findings are false.
 
 - **Demo data, not a customer deployment.** Compliance percentages, audit events and credentials come
   from seeded sample data (see the note below); the scores show how the platform reports, not a real

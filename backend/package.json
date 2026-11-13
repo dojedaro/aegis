@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "db:seed": "tsx src/db/seed.ts",
     "test": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "eval": "tsx scripts/eval-agent.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",

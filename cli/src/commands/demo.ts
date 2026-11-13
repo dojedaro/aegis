@@ -111,13 +111,13 @@ async function demonstrateCredential(): Promise<void> {
   await sleep(400);
   spinner.succeed("Credential parsed");
 
-  spinner.start("Verifying issuer trust...");
+  spinner.start("Checking issuer against the demo allowlist...");
   await sleep(500);
-  spinner.succeed("Issuer verified");
+  spinner.succeed("Issuer in demo allowlist");
 
-  spinner.start("Checking signature...");
+  spinner.start("Checking proof...");
   await sleep(600);
-  spinner.succeed("Signature valid");
+  spinner.warn("Proof present; signature not verified (not implemented in this demo)");
 
   spinner.start("Validating expiry...");
   await sleep(300);
@@ -127,15 +127,15 @@ async function demonstrateCredential(): Promise<void> {
 
   console.log(`  ${display.icons.check} Context: Valid W3C VC context`);
   console.log(`  ${display.icons.check} Type: VerifiableCredential, IdentityCredential`);
-  console.log(`  ${display.icons.check} Issuer: did:web:government.eu (TRUSTED)`);
-  console.log(`  ${display.icons.check} Signature: Ed25519Signature2020`);
+  console.log(`  ${display.icons.check} Issuer: did:web:government.eu (in demo allowlist)`);
+  console.log(`  ${display.icons.warning} Signature: Ed25519Signature2020 present, not verified`);
   console.log(`  ${display.icons.check} Expiry: Valid until 2025-06-15`);
 
   console.log();
 
   display.box(
     [
-      "Verification: PASSED",
+      "Structural checks: PASSED (signature not verified)",
       "Credential Type: Identity",
       "Trust Level: High Assurance",
       "eIDAS Compliant: Yes",

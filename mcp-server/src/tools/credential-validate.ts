@@ -106,15 +106,15 @@ export const credentialValidateSchema = {
   required: ["credential"],
 };
 
-// Simulated trusted issuers list
-const TRUSTED_ISSUERS = [
+// Demo allowlist of issuer DIDs. Matched exactly: a prefix match would trust did:web:government.eu.evil.com.
+// This is not a trust registry: a real one would also bind each issuer to its verification keys.
+const TRUSTED_ISSUERS = new Set([
   "did:web:government.eu",
   "did:web:eidas-trust.eu",
   "did:web:thesafecompany.com",
-  "did:key:",
   "did:web:university.edu",
   "did:web:bank.com",
-];
+]);
 
 function getIssuerId(issuer: string | { id: string; name?: string }): string {
   return typeof issuer === "string" ? issuer : issuer.id;
@@ -220,13 +220,13 @@ export async function credentialValidate(args: unknown): Promise<ValidationResul
 
   // Check 6: Issuer trust
   if (checkIssuerTrust) {
-    const isTrusted = TRUSTED_ISSUERS.some((trusted) => issuerId.startsWith(trusted));
+    const isTrusted = TRUSTED_ISSUERS.has(issuerId);
     checks.push({
       name: "Issuer Trust",
       passed: isTrusted,
       details: isTrusted
-        ? `Issuer ${issuerId} is in trusted list`
-        : `Issuer ${issuerId} is not in trusted list`,
+        ? `Issuer ${issuerId} is in the demo allowlist (exact match)`
+        : `Issuer ${issuerId} is not in the demo allowlist`,
     });
     if (!isTrusted) {
       warnings.push(`Issuer ${issuerId} is not in the trusted issuers list`);
@@ -254,13 +254,9 @@ export async function credentialValidate(args: unknown): Promise<ValidationResul
       errors.push("Credential proof is missing required fields");
     }
 
-    // Simulated signature verification (in real implementation, would verify crypto)
-    if (hasValidProofStructure && (credential.proof?.proofValue || credential.proof?.jws)) {
-      checks.push({
-        name: "Signature Verification",
-        passed: true,
-        details: "Signature verification simulated (would verify cryptographically in production)",
-      });
+    // The signature itself is not verified: report that instead of a simulated pass.
+    if (hasValidProofStructure) {
+      warnings.push("Signature not verified: cryptographic verification is not implemented in this demo");
     }
   }
 

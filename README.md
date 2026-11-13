@@ -238,7 +238,7 @@ aegis/
 | **Compliance Check** | `/compliance-check <file>` | Scans for PII, analyzes against regulations, spawns Regulatory Analyst for deep review |
 | **Audit Report** | `/audit-report --period month` | Queries audit trail, spawns Audit Documenter, generates formatted report |
 | **Risk Assessment** | `/risk-assess <entity>` | Calculates risk scores, spawns Risk Assessor, provides EDD recommendations |
-| **Credential Verify** | `/credential-verify <file>` | Validates W3C VCs, checks issuer trust, maps to eIDAS requirements |
+| **Credential Verify** | `/credential-verify <file>` | Structural checks of W3C VCs (fields, expiry, proof present, issuer in a demo allowlist), mapped to eIDAS requirements; signatures not verified |
 | **Incident Response** | `/incident-respond --severity high` | Guides incident workflow, spawns Security Reviewer, generates documentation |
 
 ---
@@ -254,6 +254,8 @@ aegis/
 ---
 
 ## 📊 Example Output
+
+> Illustrative output format from the skill templates, not a saved run.
 
 ### Compliance Check
 ```

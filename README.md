@@ -384,6 +384,21 @@ Services:
 
 ## 📊 Results and Quality
 
+**Agent evaluation** ([`backend/eval/`](backend/eval/), run with `npm run eval` in `backend/`): 11 short
+system descriptions, 9 with planted violations (14 in total) and 2 clean controls, each violation mapped
+to the regulation articles that correctly identify it. Scored in code, Claude Sonnet 5.5, one run:
+
+| Measure | Result |
+|---|---|
+| Planted violations found | **14 / 14** |
+| Findings on the 2 clean controls (false alarms) | **0** |
+| Findings citing an article that wasn't planted | 6 of 23 |
+
+I read the 6 extra findings and judged all of them defensible additional issues (for example a missing
+DPIA for large-scale biometric processing), not errors. Caveats: the cases are short and were written by
+the same person who built the agent, it is one run, and 14 violations is a small sample, so this shows the
+agent works on clear cases, not how it does on messy real documents.
+
 - **75 backend tests pass in about 5 seconds with no API key** (8 files: routes for AI, compliance,
   PII and security, plus the agent, LLM, RAG and risk-rule services). Tests inject a fake Claude
   client, so the suite never spends money; without a key the app itself runs in demo mode
@@ -448,8 +463,8 @@ The `examples/` folder contains realistic synthetic data for testing:
 - **Credential signatures are not verified.** The verify endpoint checks required fields and expiry and
   reports the signature and issuer trust as *not checked*. Real verification (a trust registry of issuer
   keys and Ed25519 signature checks) is the next step.
-- **The agent's review quality is not measured yet.** A test set of documents with planted violations
-  would report how many it finds and how many findings are false.
+- **The agent evaluation is small** (11 author-written cases, one run). Real documents, cases written by
+  someone else and repeated runs would make it a benchmark.
 
 - **Demo data, not a customer deployment.** Compliance percentages, audit events and credentials come
   from seeded sample data (see the note below); the scores show how the platform reports, not a real

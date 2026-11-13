@@ -1,0 +1,291 @@
+{
+  "summary": {
+    "model": "claude-sonnet-5-5",
+    "cases": 11,
+    "planted_violations": 14,
+    "found": 14,
+    "recall": 1,
+    "findings_total": 23,
+    "off_target_findings_on_violation_cases": 6,
+    "findings_on_clean_cases": 0
+  },
+  "rows": [
+    {
+      "id": "biometric-retention",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "Biometric data processed without explicit consent",
+          "found": true
+        },
+        {
+          "label": "Kept indefinitely for an unrelated purpose (storage limitation / purpose limitation)",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "gdpr-art-9",
+          "severity": "critical",
+          "description": "Face templates are biometric data used for unique identification, but there is no separate explicit consent. Only a general terms-of-service tick box exists, and no other Art. 9(2) condition is identified."
+        },
+        {
+          "article_id": "gdpr-art-5",
+          "severity": "high",
+          "description": "Files are kept \"indefinitely in case they are useful for future model training\". This breaches storage limitation and purpose limitation. The full video and passport image are kept when the template alone may be enough, which breaches data minimisation."
+        },
+        {
+          "article_id": "gdpr-art-6",
+          "severity": "high",
+          "description": "The only basis is bundled ToS acceptance. Model training is a separate purpose with no lawful basis."
+        },
+        {
+          "article_id": "gdpr-art-35",
+          "severity": "medium",
+          "description": "Large-scale biometric processing is described, and no DPIA is mentioned."
+        }
+      ],
+      "off_target": [
+        "gdpr-art-6",
+        "gdpr-art-35"
+      ]
+    },
+    {
+      "id": "automated-rejection",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "Solely automated decision with legal effect, no human intervention",
+          "found": true
+        },
+        {
+          "label": "High-risk AI system without human oversight",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "gdpr-art-22",
+          "severity": "high",
+          "description": "Account-opening rejections are solely automated (score <0.6 → 'Application declined') with no way to request human review, express a view or contest the decision."
+        },
+        {
+          "article_id": "ai-art-14",
+          "severity": "high",
+          "description": "No staff member monitors or can override the model's decisions, so there is no effective human oversight."
+        },
+        {
+          "article_id": "ai-art-26",
+          "severity": "medium",
+          "description": "The deployer has no monitoring of the system's operation or human oversight in place."
+        },
+        {
+          "article_id": "ai-art-13",
+          "severity": "medium",
+          "description": "Applicants get no explanation of the main factors behind a decision, only 'Application declined'."
+        }
+      ],
+      "off_target": [
+        "ai-art-13"
+      ]
+    },
+    {
+      "id": "pep-high-risk",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "No politically exposed person screening",
+          "found": true
+        },
+        {
+          "label": "No enhanced due diligence for high-risk third countries",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "aml-art-20",
+          "severity": "critical",
+          "description": "\"we do not screen customers for politically exposed person status\" – no PEP identification, senior management approval, source of wealth/funds checks or enhanced monitoring."
+        },
+        {
+          "article_id": "aml-art-18",
+          "severity": "high",
+          "description": "Customers from high-risk third countries get \"the same standard checks as everyone else, with no additional source-of-funds questions\" – EDD is not applied."
+        },
+        {
+          "article_id": "aml-art-13",
+          "severity": "medium",
+          "description": "The process only describes a sanctions check before opening the account; it doesn't mention identity verification, beneficial owner identification, or risk assessment of the relationship's purpose and nature. Speed is prioritised over CDD."
+        }
+      ],
+      "off_target": [
+        "aml-art-13"
+      ]
+    },
+    {
+      "id": "aml-retention",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "CDD records and transaction logs not kept for the required period",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "aml-art-40",
+          "severity": "high",
+          "description": "kyc_documents and transaction_logs are retained only 30d, and due_diligence_records are deleted on account close. The rationale says \"records are not needed after onboarding\". Article 40 requires CDD and transaction records to be kept for 5 years after the business relationship ends."
+        }
+      ],
+      "off_target": []
+    },
+    {
+      "id": "weak-identity-verification",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "Identity not verified before the business relationship starts",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "aml-art-14",
+          "severity": "critical",
+          "description": "Accounts are opened and transfers received immediately with only name and date of birth; identity documents are requested up to 60 days later, only above 10,000 EUR. Identity is not verified against reliable independent sources before the relationship or transactions."
+        },
+        {
+          "article_id": "aml-art-13",
+          "severity": "high",
+          "description": "CDD is conditional on a 10,000 EUR receipt threshold. It does not cover beneficial owner identification or the purpose and nature of the relationship, and there is no risk assessment for any customer."
+        }
+      ],
+      "off_target": []
+    },
+    {
+      "id": "social-scoring",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "Social scoring leading to unjustified detrimental treatment (prohibited practice)",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "ai-art-5",
+          "severity": "critical",
+          "description": "A public agency assigns a 'civic trust score' from social-media activity, minor traffic offences and neighbours' reports. Low scorers get slower service and fewer benefits in contexts unrelated to the original behaviour. This is social scoring by a public authority. It leads to detrimental treatment that is unjustified or disproportionate and is applied in unrelated social contexts, which Article 5 prohibits."
+        }
+      ],
+      "off_target": []
+    },
+    {
+      "id": "no-dpia-no-records",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "No DPIA for large-scale biometric processing",
+          "found": true
+        },
+        {
+          "label": "No records of processing activities",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "gdpr-art-35",
+          "severity": "critical",
+          "description": "No DPIA planned for large-scale biometric facial verification of 2 million customers; \"the vendor says their system is secure\" does not replace a DPIA."
+        },
+        {
+          "article_id": "gdpr-art-30",
+          "severity": "high",
+          "description": "No records of processing activities are kept; data flows are documented only in the vendor contract."
+        },
+        {
+          "article_id": "gdpr-art-9",
+          "severity": "high",
+          "description": "Selfie-to-document matching is biometric processing for unique identification, but the plan identifies no Art. 9(2) condition. It also applies to all customers, with no alternative."
+        }
+      ],
+      "off_target": [
+        "gdpr-art-9"
+      ]
+    },
+    {
+      "id": "wallet-assurance",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "Claims assurance level high without matching identity proofing and authentication",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "eidas-art-8",
+          "severity": "critical",
+          "description": "Wallet PID is offered for 'high' assurance logins, but activation uses only email and password with no identity proofing against an official document and no second factor. This does not meet even low-to-substantial confidence, let alone high."
+        },
+        {
+          "article_id": "eidas-art-6b",
+          "severity": "high",
+          "description": "The wallet is activated with a password only and has no strong user authentication or verified binding to the person. This falls short of the high-security requirement for wallets."
+        }
+      ],
+      "off_target": []
+    },
+    {
+      "id": "no-notice-no-basis",
+      "mode": "agentic",
+      "planted": [
+        {
+          "label": "No information provided at collection (privacy notice)",
+          "found": true
+        },
+        {
+          "label": "No lawful basis for processing",
+          "found": true
+        }
+      ],
+      "findings": [
+        {
+          "article_id": "gdpr-art-13",
+          "severity": "high",
+          "description": "The sign-up form \"shows no privacy notice\". Data subjects aren't told the controller's identity, the purposes, the legal basis, the retention period or their rights when their data is collected."
+        },
+        {
+          "article_id": "gdpr-art-6",
+          "severity": "critical",
+          "description": "\"The company has not decided or documented the legal basis\" for processing name, address, phone number and a national ID copy. Without an Art. 6 basis, the processing is unlawful."
+        },
+        {
+          "article_id": "gdpr-art-5",
+          "severity": "medium",
+          "description": "A national ID copy is collected at sign-up with no stated purpose or necessity. This conflicts with the lawfulness, transparency, purpose limitation and data minimisation principles."
+        }
+      ],
+      "off_target": [
+        "gdpr-art-5"
+      ]
+    },
+    {
+      "id": "clean-kyc",
+      "mode": "agentic",
+      "planted": [],
+      "findings": [],
+      "off_target": []
+    },
+    {
+      "id": "clean-ai-review",
+      "mode": "agentic",
+      "planted": [],
+      "findings": [],
+      "off_target": []
+    }
+  ]
+}

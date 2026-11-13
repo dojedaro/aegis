@@ -1,0 +1,102 @@
+[
+  {
+    "id": "biometric-retention",
+    "frameworks": ["gdpr"],
+    "target_type": "system description",
+    "content": "Onboarding service for a digital bank. Customers upload a passport photo and a face video; we extract a face template for matching and store the template, the passport image and the full video in our data lake. Files are kept indefinitely in case they are useful for future model training. Users tick a box agreeing to the terms of service; there is no separate consent for biometric processing.",
+    "planted": [
+      { "label": "Biometric data processed without explicit consent", "accept": ["gdpr-art-9"] },
+      { "label": "Kept indefinitely for an unrelated purpose (storage limitation / purpose limitation)", "accept": ["gdpr-art-5", "gdpr-art-17"] }
+    ]
+  },
+  {
+    "id": "automated-rejection",
+    "frameworks": ["gdpr", "eu-ai-act"],
+    "target_type": "system description",
+    "content": "Account-opening decisions are fully automated. A machine-learning model scores each applicant from identity data and device signals; applicants below 0.6 are rejected automatically and shown 'Application declined'. There is no way to ask for a human review, no explanation of the main factors, and no staff member monitors or can override the model's decisions.",
+    "planted": [
+      { "label": "Solely automated decision with legal effect, no human intervention", "accept": ["gdpr-art-22"] },
+      { "label": "High-risk AI system without human oversight", "accept": ["ai-art-14", "ai-art-26"] }
+    ]
+  },
+  {
+    "id": "pep-high-risk",
+    "frameworks": ["aml"],
+    "target_type": "process",
+    "content": "Customer onboarding runs a sanctions-list check and then opens the account. To keep onboarding fast, we do not screen customers for politically exposed person status. Customers from high-risk third countries go through the same standard checks as everyone else, with no additional source-of-funds questions.",
+    "planted": [
+      { "label": "No politically exposed person screening", "accept": ["aml-art-20"] },
+      { "label": "No enhanced due diligence for high-risk third countries", "accept": ["aml-art-18"] }
+    ]
+  },
+  {
+    "id": "aml-retention",
+    "frameworks": ["aml"],
+    "target_type": "configuration",
+    "content": "retention_policy:\n  kyc_documents: 30d\n  transaction_logs: 30d\n  due_diligence_records: delete_on_account_close\n# Rationale: minimise storage costs; records are not needed after onboarding.",
+    "planted": [
+      { "label": "CDD records and transaction logs not kept for the required period", "accept": ["aml-art-40"] }
+    ]
+  },
+  {
+    "id": "weak-identity-verification",
+    "frameworks": ["aml"],
+    "target_type": "process",
+    "content": "New customers can open an account and start receiving transfers immediately after entering their name and date of birth. Identity documents are requested within 60 days, and only if the customer receives more than 10,000 EUR. Until then, identity is not verified against any document or independent source.",
+    "planted": [
+      { "label": "Identity not verified before the business relationship starts", "accept": ["aml-art-14", "aml-art-13"] }
+    ]
+  },
+  {
+    "id": "social-scoring",
+    "frameworks": ["eu-ai-act"],
+    "target_type": "system description",
+    "content": "A public-sector benefits agency deploys an AI system that assigns every resident a 'civic trust score' from social-media activity, minor traffic offences and neighbours' reports. Residents with low scores receive slower service and fewer benefits in areas unrelated to the original behaviour.",
+    "planted": [
+      { "label": "Social scoring leading to unjustified detrimental treatment (prohibited practice)", "accept": ["ai-art-5"] }
+    ]
+  },
+  {
+    "id": "no-dpia-no-records",
+    "frameworks": ["gdpr"],
+    "target_type": "project plan",
+    "content": "Project plan: roll out facial verification to all 2 million customers next quarter, matching selfies against identity documents. Data protection impact assessment: not planned, the vendor says their system is secure. Records of processing activities: none maintained; the data flows are documented only in the vendor contract.",
+    "planted": [
+      { "label": "No DPIA for large-scale biometric processing", "accept": ["gdpr-art-35"] },
+      { "label": "No records of processing activities", "accept": ["gdpr-art-30"] }
+    ]
+  },
+  {
+    "id": "wallet-assurance",
+    "frameworks": ["eidas"],
+    "target_type": "system description",
+    "content": "Our digital identity wallet issues person identification data that relying parties may use for 'high' assurance logins. Users activate the wallet with an email address and a password only; there is no identity proofing against an official document and no second factor.",
+    "planted": [
+      { "label": "Claims assurance level high without matching identity proofing and authentication", "accept": ["eidas-art-8", "eidas-art-6b"] }
+    ]
+  },
+  {
+    "id": "no-notice-no-basis",
+    "frameworks": ["gdpr"],
+    "target_type": "system description",
+    "content": "The sign-up form collects name, address, phone number and a copy of a national ID. The form shows no privacy notice, and the company has not decided or documented the legal basis on which it processes this data.",
+    "planted": [
+      { "label": "No information provided at collection (privacy notice)", "accept": ["gdpr-art-13"] },
+      { "label": "No lawful basis for processing", "accept": ["gdpr-art-6"] }
+    ]
+  },
+  {
+    "id": "clean-kyc",
+    "frameworks": ["gdpr", "aml"],
+    "target_type": "process",
+    "content": "Onboarding verifies identity against an official document and an independent database before the account opens. Customers are screened for PEP status and sanctions; customers from high-risk third countries get enhanced due diligence with source-of-funds checks. A privacy notice is shown at collection, the legal basis is the AML legal obligation, only the data required by AML rules is collected, and records are kept for five years after the relationship ends and then deleted.",
+    "planted": []
+  },
+  {
+    "id": "clean-ai-review",
+    "frameworks": ["eu-ai-act", "gdpr"],
+    "target_type": "system description",
+    "content": "An AI model flags transactions that may be suspicious. Every flag is reviewed by a trained analyst who makes the final decision and can override the model; customers can contest decisions. The model's limitations and intended use are documented for staff, its training data is reviewed for bias and quality, and a risk-management process re-evaluates it quarterly.",
+    "planted": []
+  }
+]

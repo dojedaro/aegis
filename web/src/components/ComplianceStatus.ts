@@ -73,7 +73,7 @@ export class ComplianceStatus {
           <div class="gauge-circle" style="--gauge-value: ${gaugeValue}deg;">
             <span class="gauge-value">${this.complianceScore}%</span>
           </div>
-          <div class="gauge-label">Overall Compliance</div>
+          <div class="gauge-label">Overall Compliance (sample data)</div>
         </div>
 
         <div style="flex: 1;">

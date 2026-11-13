@@ -1,18 +1,14 @@
-# Aegis - AI-Powered Compliance Operations Platform
+# Aegis: AI Compliance Operations Platform
 
 <div align="center">
 
-![Aegis Logo](https://img.shields.io/badge/AEGIS-Compliance%20Platform-00d4aa?style=for-the-badge&logo=shield&logoColor=white)
 
 **A Claude agent that reviews systems against GDPR, eIDAS 2.0, AML/KYC and the EU AI Act, grounded in a library of real regulation articles, with deterministic PII checks and an audit trail.**
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://aegis-web-xi.vercel.app/)
 [![Live API](https://img.shields.io/badge/Live%20API-Render-46E3B7?style=flat-square&logo=render)](https://aegis-backend-ermb.onrender.com/api-docs)
 [![CI](https://img.shields.io/github/actions/workflow/status/dojedaro/aegis/ci.yml?style=flat-square&label=CI)](https://github.com/dojedaro/aegis/actions)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/dojedaro/aegis#docker)
 
 [**Live Demo**](https://aegis-web-xi.vercel.app/) • [What It Does](#-what-it-does) • [Features](#features) • [Architecture](#architecture) • [Quick Start](#quick-start)
 

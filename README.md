@@ -4,9 +4,8 @@
 
 ![Aegis Logo](https://img.shields.io/badge/AEGIS-Compliance%20Platform-00d4aa?style=for-the-badge&logo=shield&logoColor=white)
 
-**Transforming regulatory compliance with AI agents — from hours to seconds**
+**A Claude agent that reviews systems against GDPR, eIDAS 2.0, AML/KYC and the EU AI Act, grounded in a library of real regulation articles, with deterministic PII checks and an audit trail.**
 
-[![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-4a9eff?style=flat-square)](https://claude.ai)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
@@ -15,7 +14,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/dojedaro/aegis/ci.yml?style=flat-square&label=CI)](https://github.com/dojedaro/aegis/actions)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/dojedaro/aegis#docker)
 
-[**Live Demo**](https://aegis-web-xi.vercel.app/) • [Why This Matters](#-why-this-matters) • [Features](#features) • [Architecture](#architecture) • [Quick Start](#quick-start)
+[**Live Demo**](https://aegis-web-xi.vercel.app/) • [What It Does](#-what-it-does) • [Features](#features) • [Architecture](#architecture) • [Quick Start](#quick-start)
 
 > **Note:** First API request may take ~30 seconds to initialize (free tier cold start)
 
@@ -25,57 +24,26 @@
 
 ---
 
-## 🎯 Why This Matters
+## 🎯 What It Does
 
-### The Problem
+Compliance review means reading a system or document against many regulations, finding the articles
+that apply, and recording each issue with a citation an auditor can check. Aegis does that with a
+Claude agent whose tools do the parts that must be exact:
 
-Regulatory compliance is expensive and slow:
-- **Manual reviews** take 4-8 hours per code change
-- **Expert bottleneck** — limited compliance specialists available
-- **Inconsistent coverage** — humans miss patterns across large codebases
-- **Audit preparation** takes weeks of documentation gathering
+| Tool | What it does | Why it's a tool and not the model |
+|---|---|---|
+| `search_regulations` | BM25 retrieval over a curated library of regulation articles | Answers are grounded in real article text |
+| `scan_pii` | Rule-based detection of personal data in an excerpt | Deterministic: the same input always gets the same result |
+| `record_finding` | Records an issue with severity and the article it violates | Rejects a finding whose cited article doesn't exist, so citations can't be invented |
 
-### The Solution
+Around the agent sits a full application: explainable rule-based KYC risk scoring, an RBAC-protected
+audit trail, JWT authentication, a dashboard, and a daily cap on AI requests for the public demo.
 
-Aegis demonstrates how **AI agents can automate compliance workflows**:
+### Also a Claude Code extension
 
-| Traditional Approach | With Aegis |
-|---------------------|------------|
-| 4-8 hours per review | **< 30 seconds** |
-| Manual checklist verification | **Automated pattern analysis** |
-| Reactive audit preparation | **Continuous compliance monitoring** |
-| Single-framework expertise | **Multi-regulation coverage** (GDPR, eIDAS, AML, EU AI Act) |
-
-### How It Works
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  /compliance-   │────▶│  AI Orchestration │────▶│  Compliance     │
-│     check       │     │                  │     │  Report         │
-└─────────────────┘     │  • MCP Tools     │     └─────────────────┘
-                        │  • Subagents     │
-                        │  • Hooks         │
-                        └──────────────────┘
-```
-
-**One command. Multiple AI agents. Comprehensive analysis.**
-
----
-
-## 🤖 About This Project
-
-**This project isn't about the compliance platform itself.** It's a demonstration of how I used Claude Code's agentic capabilities to build and deploy a complete end-to-end system.
-
-The real value is showing how AI agents can be orchestrated to deliver working software:
-
-| Capability | What It Demonstrates |
-|------------|---------------------|
-| **Skills** | Orchestrating complex multi-step workflows with a single command |
-| **Subagents** | Spawning specialized AI experts for deep domain analysis |
-| **MCP Tools** | Extending Claude with custom, domain-specific capabilities |
-| **Hooks** | Enforcing deterministic guardrails (PII blocking, audit trails, pre-commit checks) |
-
-This is a portfolio piece demonstrating proficiency in **AI-enabled development** — using agentic AI to accelerate software delivery while maintaining quality and compliance.
+The repository also packages the same capabilities for Claude Code: slash-command skills, specialized
+subagents, an MCP server exposing the compliance tools, and hooks that block PII and log every action.
+This shows how domain guardrails can be enforced deterministically around an AI coding agent.
 
 ---
 

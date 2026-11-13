@@ -43,7 +43,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  const requestId = (req as any).requestId || "unknown";
+  const requestId = req.requestId || "unknown";
 
   // Invalid body/query: Express 5 forwards errors thrown by any (sync or async) handler here
   if (err instanceof ZodError) {

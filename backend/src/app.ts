@@ -58,7 +58,7 @@ export function createApp({ claudeService, ragService, agentService }: Services)
   app.use((req, res, next) => {
     const requestId = (req.headers["x-request-id"] as string) || randomUUID();
     res.setHeader("x-request-id", requestId);
-    (req as any).requestId = requestId;
+    req.requestId = requestId;
     next();
   });
 
@@ -320,7 +320,7 @@ export function createApp({ claudeService, ragService, agentService }: Services)
     res.status(404).json({
       error: "Not found",
       path: req.path,
-      request_id: (req as any).requestId,
+      request_id: req.requestId,
     });
   });
 

@@ -190,7 +190,8 @@ class ApiClient {
     id: string;
     status: string;
     checks: Record<string, { passed: boolean; message: string }>;
-    eidas_mapping: { assurance_level: string; wallet_compatible: boolean };
+    signature_verified: boolean;
+    eidas_mapping: { assurance_level: string | null; trust_framework: string; note: string };
   } | null> {
     const result = await this.post<any>('/api/credentials/verify', credential);
     return result.data;

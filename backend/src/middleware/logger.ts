@@ -29,12 +29,12 @@ function formatLog(entry: LogEntry): string {
 
 export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const startTime = Date.now();
-  const requestId = (req as any).requestId || "unknown";
+  const requestId = req.requestId || "unknown";
 
   // Capture response on finish
   res.on("finish", () => {
     const duration = Date.now() - startTime;
-    const user = (req as any).user;
+    const user = req.user;
 
     const logEntry: LogEntry = {
       timestamp: new Date().toISOString(),

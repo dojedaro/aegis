@@ -29,7 +29,7 @@ export const regulations: Framework[] = [
     articles: [
       {
         id: "gdpr-art-5",
-        title: "Article 5 - Principles relating to processing",
+        title: "Article 5 - Principles relating to processing of personal data",
         summary: "Personal data must be processed lawfully, fairly, and transparently. Data must be collected for specified purposes, be adequate and relevant, kept accurate, stored only as long as necessary, and processed securely.",
         relevance: "Core principles for all identity data processing. Every KYC operation must demonstrate compliance with these principles.",
         officialLink: "https://gdpr-info.eu/art-5-gdpr/",
@@ -53,7 +53,7 @@ export const regulations: Framework[] = [
       },
       {
         id: "gdpr-art-9",
-        title: "Article 9 - Processing of special categories",
+        title: "Article 9 - Processing of special categories of personal data",
         summary: "Processing of biometric data for identification, racial/ethnic origin, and other sensitive data is prohibited unless specific exceptions apply (explicit consent, legal obligation, etc.).",
         relevance: "Critical for biometric identity verification. Biometric data used for identification is a special category requiring explicit legal basis.",
         officialLink: "https://gdpr-info.eu/art-9-gdpr/",
@@ -69,7 +69,7 @@ export const regulations: Framework[] = [
       },
       {
         id: "gdpr-art-13",
-        title: "Article 13 - Information when data collected from subject",
+        title: "Article 13 - Information to be provided when collecting personal data",
         summary: "When collecting personal data directly, must provide: controller identity, purposes, legal basis, recipients, retention period, data subject rights, and right to complain.",
         relevance: "At point of identity collection, users must receive comprehensive information about processing of their identity data.",
         officialLink: "https://gdpr-info.eu/art-13-gdpr/",
@@ -90,6 +90,14 @@ export const regulations: Framework[] = [
         relevance: "Identity data may need to be retained for AML purposes even after erasure request. Document the legal basis for retention.",
         officialLink: "https://gdpr-info.eu/art-17-gdpr/",
         keywords: ["erasure", "deletion", "right to be forgotten", "retention exception"]
+      },
+      {
+        id: "gdpr-art-22",
+        title: "Article 22 - Automated individual decision-making, including profiling",
+        summary: "Data subject has right not to be subject to a decision based solely on automated processing, including profiling, which produces legal effects.",
+        relevance: "AI-based KYC risk scoring must allow for human review and intervention.",
+        officialLink: "https://eur-lex.europa.eu/eli/reg/2016/679/art_22/oj",
+        keywords: ["automated decision", "profiling", "human intervention", "AI"]
       },
       {
         id: "gdpr-art-25",
@@ -165,6 +173,22 @@ export const regulations: Framework[] = [
         keywords: ["mutual recognition", "cross-border", "interoperability", "notified scheme"]
       },
       {
+        id: "eidas-art-6a",
+        title: "Article 6a - European Digital Identity Wallets",
+        summary: "Member States shall provide EUDI Wallets enabling secure request, storage, and sharing of identity data and electronic attestations of attributes.",
+        relevance: "Core framework for accepting wallet-based credentials in KYC processes.",
+        officialLink: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1183",
+        keywords: ["EUDI wallet", "digital identity", "attestations", "credentials"]
+      },
+      {
+        id: "eidas-art-6b",
+        title: "Article 6b - Essential requirements for wallets",
+        summary: "Wallets must ensure high level of security, user control, privacy by design, and interoperability across Member States.",
+        relevance: "Security requirements for accepting wallet credentials in verification workflows.",
+        officialLink: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1183",
+        keywords: ["security", "privacy by design", "interoperability", "user control"]
+      },
+      {
         id: "eidas-art-8",
         title: "Article 8 - Assurance levels",
         summary: "Three assurance levels for electronic identification: Low, Substantial, and High. Each level specifies degree of confidence in claimed identity.",
@@ -190,7 +214,7 @@ export const regulations: Framework[] = [
       },
       {
         id: "eidas-art-45",
-        title: "Article 45 - Electronic attestation of attributes",
+        title: "Article 45 - Requirements for electronic attestation of attributes",
         summary: "Electronic attestations of attributes issued by qualified trust service providers shall be recognized across Member States as proof of the attributes they contain.",
         relevance: "Verifiable credentials/attestations from QTSPs have legal recognition across EU. Enables trusted attribute sharing.",
         officialLink: "https://eur-lex.europa.eu/eli/reg/2024/1183/oj#d1e4022-1-1",
@@ -231,11 +255,19 @@ export const regulations: Framework[] = [
       },
       {
         id: "aml-art-13",
-        title: "Article 13 - Standard CDD measures",
+        title: "Article 13 - Customer due diligence measures",
         summary: "Standard CDD includes: identifying customer (name, ID number, date of birth, address), verifying identity using reliable sources, and identifying beneficial owners with >25% ownership.",
         relevance: "Specific data points required for customer identification. Minimum information to collect and verify.",
         officialLink: "https://eur-lex.europa.eu/eli/dir/2018/843/oj#d1e1601-1-1",
         keywords: ["standard CDD", "identification data", "verification", "beneficial ownership"]
+      },
+      {
+        id: "aml-art-14",
+        title: "Article 14 - Verification of identity",
+        summary: "Identity verification must be done before establishing business relationship or carrying out transaction, using reliable and independent sources.",
+        relevance: "Specifies when and how identity verification must occur.",
+        officialLink: "https://eur-lex.europa.eu/eli/dir/2015/849/art_14/oj",
+        keywords: ["verification timing", "reliable sources", "independent verification"]
       },
       {
         id: "aml-art-15",
@@ -255,7 +287,7 @@ export const regulations: Framework[] = [
       },
       {
         id: "aml-art-20",
-        title: "Article 20 - Politically Exposed Persons",
+        title: "Article 20 - Politically exposed persons",
         summary: "PEPs and their family/associates require: senior management approval, source of wealth/funds determination, and enhanced ongoing monitoring.",
         relevance: "Specific requirements for PEP customers. Must screen against PEP lists and apply enhanced measures.",
         officialLink: "https://eur-lex.europa.eu/eli/dir/2018/843/oj#d1e2037-1-1",
@@ -312,7 +344,7 @@ export const regulations: Framework[] = [
       },
       {
         id: "ai-art-6",
-        title: "Article 6 - Classification of high-risk AI systems",
+        title: "Article 6 - Classification rules for high-risk AI systems",
         summary: "AI systems are high-risk if: used as safety component of regulated product, OR listed in Annex III (includes biometric identification and critical infrastructure).",
         relevance: "Identity verification AI is explicitly high-risk under Annex III. All high-risk requirements apply.",
         officialLink: "https://eur-lex.europa.eu/eli/reg/2024/1689/oj#d1e2298-1-1",
@@ -352,7 +384,7 @@ export const regulations: Framework[] = [
       },
       {
         id: "ai-art-13",
-        title: "Article 13 - Transparency and information to deployers",
+        title: "Article 13 - Transparency and information for deployers",
         summary: "High-risk AI must be transparent: clear instructions for use, capabilities, limitations, intended purpose, accuracy metrics, and potential risks.",
         relevance: "Must provide clear documentation about identity AI capabilities and limitations to users/deployers.",
         officialLink: "https://eur-lex.europa.eu/eli/reg/2024/1689/oj#d1e2949-1-1",
@@ -376,7 +408,7 @@ export const regulations: Framework[] = [
       },
       {
         id: "ai-art-26",
-        title: "Article 26 - Obligations of deployers",
+        title: "Article 26 - Obligations of deployers of high-risk AI",
         summary: "Deployers must: use AI according to instructions, ensure human oversight, monitor operation, keep logs, inform affected individuals, and conduct impact assessments where required.",
         relevance: "When using third-party identity AI, deployers have their own compliance obligations.",
         officialLink: "https://eur-lex.europa.eu/eli/reg/2024/1689/oj#d1e3891-1-1",

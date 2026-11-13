@@ -84,8 +84,8 @@ Critical: 17-25 (Red)
       <p>Verify <strong>W3C Verifiable Credentials</strong> with comprehensive validation:</p>
       <ul style="margin: 1rem 0; padding-left: 1.5rem; color: var(--color-text-secondary);">
         <li>JSON-LD context validation</li>
-        <li>Issuer trust verification</li>
-        <li>Cryptographic signature checks</li>
+        <li>Issuer check against a demo allowlist (not a trust registry)</li>
+        <li>Proof presence check (signatures not cryptographically verified)</li>
         <li>Expiry and schema validation</li>
       </ul>
       <p>The <strong>/credential-verify</strong> skill maps results to eIDAS 2.0 compliance.</p>

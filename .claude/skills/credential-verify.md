@@ -102,7 +102,7 @@ Map credential validation to regulatory requirements:
 
 ### Issuer
 - ID: `did:web:government.eu`
-- Trust Status: Verified trusted issuer
+- Trust Status: In demo allowlist (exact match; not a trust registry)
 
 ### Subject Claims
 | Claim | Value |

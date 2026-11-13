@@ -96,8 +96,8 @@ export const credentialValidateSchema = {
       type: "object",
       properties: {
         checkExpiry: { type: "boolean", description: "Check if credential is expired (default: true)" },
-        verifySignature: { type: "boolean", description: "Verify cryptographic signature (default: true)" },
-        checkIssuerTrust: { type: "boolean", description: "Check if issuer is trusted (default: true)" },
+        verifySignature: { type: "boolean", description: "Check that a proof with type and verificationMethod is present (default: true). The signature itself is not cryptographically verified." },
+        checkIssuerTrust: { type: "boolean", description: "Check the issuer DID against a demo allowlist by exact match (default: true). Not a trust registry." },
         requiredTypes: { type: "array", items: { type: "string" }, description: "Required credential types" },
       },
       description: "Validation options",

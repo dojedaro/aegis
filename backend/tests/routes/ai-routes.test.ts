@@ -1,17 +1,23 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { get } from "../../src/db/schema.js";
 import { LLMClient } from "../../src/services/llm.js";
 import { buildTestApp, ScriptedMessages, text } from "../helpers.js";
 
 describe("AI-backed routes", () => {
+  // Failure-path tests make the app log an error on purpose: capture it so it's asserted, not printed.
+  const consoleError = () => vi.spyOn(console, "error").mockImplementation(() => {});
+  afterEach(() => vi.restoreAllMocks());
+
   it("marks a compliance check failed (502) when the model call fails", async () => {
+    const logged = consoleError();
     const app = await buildTestApp(new LLMClient(new ScriptedMessages([new Error("boom")])));
     const res = await request(app)
       .post("/api/compliance/check")
       .send({ target: "svc-a", target_type: "config", frameworks: ["gdpr"], content: "user_email: a@b.com" });
 
     expect(res.status).toBe(502);
+    expect(logged).toHaveBeenCalled();
     expect(get<{ status: string }>("SELECT status FROM compliance_checks WHERE id = ?", [res.body.id])?.status).toBe(
       "failed"
     );
@@ -38,6 +44,7 @@ describe("AI-backed routes", () => {
   });
 
   it("falls back to rules (and says so) when AI risk scoring fails", async () => {
+    const logged = consoleError();
     const app = await buildTestApp(new LLMClient(new ScriptedMessages([new Error("timeout")])));
     const res = await request(app)
       .post("/api/risk/assess")
@@ -45,6 +52,7 @@ describe("AI-backed routes", () => {
     expect(res.status).toBe(201);
     expect(res.body.source).toBe("rules");
     expect(res.body.ai_error).toBeDefined();
+    expect(logged).toHaveBeenCalled();
   });
 
   it("grounds RAG answers in retrieved articles and labels the source", async () => {

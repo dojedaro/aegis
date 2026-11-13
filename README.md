@@ -397,7 +397,9 @@ to the regulation articles that correctly identify it. Scored in code, Claude So
 I read the 6 extra findings and judged all of them defensible additional issues (for example a missing
 DPIA for large-scale biometric processing), not errors. Caveats: the cases are short and were written by
 the same person who built the agent, it is one run, and 14 violations is a small sample, so this shows the
-agent works on clear cases, not how it does on messy real documents.
+agent works on clear cases, not how it does on messy real documents. Scoring checks the article a finding
+cites, not its text, and some violations accept either of two related articles; the clean controls are
+easy negatives that state the compliant practice outright.
 
 - **75 backend tests pass in about 5 seconds with no API key** (8 files: routes for AI, compliance,
   PII and security, plus the agent, LLM, RAG and risk-rule services). Tests inject a fake Claude

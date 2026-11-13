@@ -135,15 +135,15 @@ export function box(content: string[], title?: string): void {
   const maxLength = Math.max(...content.map((l) => l.length), title?.length || 0);
   const width = maxLength + 4;
 
-  console.log(colors.cyan("┌" + "─".repeat(width - 2) + "┐"));
+  console.log(colors.primary("┌" + "─".repeat(width - 2) + "┐"));
   if (title) {
-    console.log(colors.cyan("│ ") + colors.primary.bold(title.padEnd(width - 4)) + colors.cyan(" │"));
-    console.log(colors.cyan("├" + "─".repeat(width - 2) + "┤"));
+    console.log(colors.primary("│ ") + colors.primary.bold(title.padEnd(width - 4)) + colors.primary(" │"));
+    console.log(colors.primary("├" + "─".repeat(width - 2) + "┤"));
   }
   for (const line of content) {
-    console.log(colors.cyan("│ ") + line.padEnd(width - 4) + colors.cyan(" │"));
+    console.log(colors.primary("│ ") + line.padEnd(width - 4) + colors.primary(" │"));
   }
-  console.log(colors.cyan("└" + "─".repeat(width - 2) + "┘"));
+  console.log(colors.primary("└" + "─".repeat(width - 2) + "┘"));
 }
 
 export function riskMatrix(): void {

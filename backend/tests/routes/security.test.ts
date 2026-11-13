@@ -5,6 +5,7 @@ import request from "supertest";
 import { buildTestApp, bearer } from "../helpers.js";
 import { query } from "../../src/db/schema.js";
 import { csvCell } from "../../src/routes/audit.js";
+import { appConfig } from "../../src/config.js";
 
 describe("Security", () => {
   let app: express.Express;
@@ -93,6 +94,14 @@ describe("Security", () => {
     it("rejects unsigned (alg: none) tokens", async () => {
       const unsigned = jwt.sign({ id: "x", email: "evil@x.com", role: "admin" }, "", { algorithm: "none" });
       expect((await request(app).get("/api/auth/me").set("Authorization", `Bearer ${unsigned}`)).status).toBe(401);
+    });
+
+    it("rejects validly signed tokens whose claims don't match the schema", async () => {
+      const badRole = jwt.sign({ id: "x", email: "a@b.com", role: "superuser" }, appConfig.jwtSecret, { algorithm: "HS256" });
+      const noId = jwt.sign({ email: "a@b.com", role: "admin" }, appConfig.jwtSecret, { algorithm: "HS256" });
+      for (const token of [badRole, noId]) {
+        expect((await request(app).get("/api/auth/me").set("Authorization", `Bearer ${token}`)).status).toBe(401);
+      }
     });
 
     it("login issues a working token", async () => {

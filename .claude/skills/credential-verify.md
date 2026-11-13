@@ -88,11 +88,11 @@ Map credential validation to regulatory requirements:
 | Type | ✅ PASS | VerifiableCredential, IdentityCredential |
 | Issuance | ✅ PASS | Issued 2024-01-01 |
 | Expiry | ✅ PASS | Valid until 2025-01-01 |
-| Issuer | ✅ PASS | Trusted issuer: government.eu |
-| Proof | ✅ PASS | Ed25519Signature2020 verified |
+| Issuer | ✅ PASS | In demo allowlist: government.eu (exact match; not a trust registry) |
+| Proof | ⚠️ PRESENT | Ed25519Signature2020 present; signature not verified (not implemented) |
 | Subject | ✅ PASS | Subject ID present |
 
-## Overall Result: ✅ VALID
+## Overall Result: ✅ STRUCTURALLY VALID (signature not verified)
 
 ## Credential Details
 
@@ -178,12 +178,12 @@ Running validation checks...
 ✅ Type: VerifiableCredential, IdentityCredential
 ✅ Issuance: 2024-01-01 (valid date)
 ✅ Expiry: 2025-01-01 (351 days remaining)
-✅ Issuer: did:web:government.eu (TRUSTED)
-✅ Proof: Ed25519Signature2020 (verified)
+✅ Issuer: did:web:government.eu (in demo allowlist)
+⚠️ Proof: Ed25519Signature2020 (present, not verified)
 ✅ Subject: did:key:z6Mk... (present)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-VERIFICATION RESULT: ✅ VALID
+VERIFICATION RESULT: ✅ STRUCTURALLY VALID (signature not verified)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Credential Summary:

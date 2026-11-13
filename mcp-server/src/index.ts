@@ -50,7 +50,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "credential_validate",
-        description: "Validate W3C Verifiable Credentials. Checks credential schema, signatures, expiry, and issuer trust.",
+        description: "Structural validation of W3C Verifiable Credentials: required fields, types, expiry, proof present, and issuer in a demo allowlist. Signatures are not cryptographically verified.",
         inputSchema: credentialValidateSchema,
       },
       {

@@ -401,8 +401,8 @@ agent works on clear cases, not how it does on messy real documents. Scoring che
 cites, not its text, and some violations accept either of two related articles; the clean controls are
 easy negatives that state the compliant practice outright.
 
-- **76 backend tests pass in about 5 seconds with no API key** (9 files: routes for AI, compliance,
-  PII and security; the agent, LLM, RAG and risk-rule services; and a check that the web app's
+- **80 backend tests pass in about 5 seconds with no API key** (10 files: routes for AI, compliance,
+  PII and security; the agent, LLM, RAG, risk-rule and credential-check services; and a check that the web app's
   regulation library matches the one the agent cites). Tests inject a fake Claude
   client, so the suite never spends money; without a key the app itself runs in demo mode
   (extractive answers and rule-based checks).

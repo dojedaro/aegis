@@ -483,7 +483,7 @@ The `examples/` folder contains realistic synthetic data for testing:
 - **Live API (Backend):** https://aegis-backend-ermb.onrender.com
 - **API Documentation:** https://aegis-backend-ermb.onrender.com/api-docs
 - **GitHub:** https://github.com/dojedaro/aegis
-- **LinkedIn:** https://www.linkedin.com/in/dojedaro
+- **LinkedIn:** https://www.linkedin.com/in/danielojedar
 
 ---
 
@@ -500,6 +500,6 @@ This project uses **synthetic data** for demonstration. "The Safe Company" is fi
 **AI Enabler** — Transforming complex workflows with intelligent automation
 
 [![GitHub](https://img.shields.io/badge/GitHub-dojedaro-181717?style=flat-square&logo=github)](https://github.com/dojedaro)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-dojedaro-0077B5?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/dojedaro)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-danielojedar-0077B5?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/danielojedar)
 
 </div>

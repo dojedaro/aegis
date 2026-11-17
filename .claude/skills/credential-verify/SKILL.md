@@ -1,3 +1,8 @@
+---
+name: credential-verify
+description: "Validate W3C Verifiable Credentials for identity verification, document authenticity, and compliance with credential standards."
+---
+
 # /credential-verify - Verifiable Credential Validation
 
 Validate W3C Verifiable Credentials for identity verification, document authenticity, and compliance with credential standards.

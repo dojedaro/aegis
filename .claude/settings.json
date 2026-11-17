@@ -5,9 +5,7 @@
       "Bash(npm run dev:*)",
       "Bash(npm run test:*)",
       "Bash(npx aegis *)",
-      "Bash(node hooks/*.js *)",
-      "Read(aegis/**)",
-      "Write(aegis/mcp-server/data/audit-trail.jsonl)"
+      "Bash(node hooks/*.js *)"
     ],
     "deny": [
       "Write(*.env)",
@@ -15,11 +13,40 @@
       "Write(*secrets*)"
     ]
   },
-  "mcpServers": {
-    "aegis-compliance": {
-      "command": "node",
-      "args": ["mcp-server/dist/index.js"],
-      "cwd": "${workspaceFolder}"
-    }
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/hooks/pii-scanner.js\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/hooks/compliance-gate.js\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/hooks/audit-logger.js\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }

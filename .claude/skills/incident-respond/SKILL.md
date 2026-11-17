@@ -1,3 +1,8 @@
+---
+name: incident-respond
+description: "Guide through compliance incident response process, create documentation, assess impact, and ensure proper regulatory notification."
+---
+
 # /incident-respond - Compliance Incident Response
 
 Guide through compliance incident response process, create documentation, assess impact, and ensure proper regulatory notification.

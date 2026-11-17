@@ -109,9 +109,10 @@ function main() {
     try {
       const hookData = JSON.parse(input);
 
-      const tool = hookData.tool || 'unknown';
-      const args = hookData.arguments || {};
-      const result = hookData.result || {};
+      // PostToolUse payload: { tool_name, tool_input, tool_response, ... }
+      const tool = hookData.tool_name || 'unknown';
+      const args = hookData.tool_input || {};
+      const result = hookData.tool_response || {};
 
       // Create audit entry
       const entry = {
@@ -137,13 +138,6 @@ function main() {
 
       // Append to audit log (JSON Lines format)
       fs.appendFileSync(AUDIT_FILE, JSON.stringify(entry) + '\n');
-
-      // Output confirmation
-      console.log(JSON.stringify({
-        status: 'logged',
-        auditId: entry.id,
-        message: `Operation logged to audit trail`
-      }));
 
       process.exit(0);
 

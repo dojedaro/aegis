@@ -1,3 +1,8 @@
+---
+name: risk-assess
+description: "Evaluate risk across multiple dimensions for entities, processes, or systems using a structured risk assessment methodology."
+---
+
 # /risk-assess - Risk Scoring Workflow
 
 Evaluate risk across multiple dimensions for entities, processes, or systems using a structured risk assessment methodology.

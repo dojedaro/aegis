@@ -2,12 +2,14 @@
 /**
  * PII Scanner Hook
  *
- * Pre-edit/write hook that scans content for Personally Identifiable Information.
- * Blocks operations containing detected PII and suggests redaction.
+ * Claude Code PreToolUse hook for Edit and Write. Scans the text about to be
+ * written for Personally Identifiable Information and blocks the tool call
+ * when it finds any.
  *
+ * Input (stdin): the PreToolUse JSON payload, { tool_name, tool_input, ... }.
  * Exit codes:
- *   0 - Pass (no PII detected or user override)
- *   1 - Block (PII detected)
+ *   0 - allow (no PII found, or the payload could not be parsed)
+ *   2 - block; the report on stderr is shown to Claude as the reason
  */
 
 const PII_PATTERNS = [
@@ -131,10 +133,10 @@ function main() {
       // Extract content to scan based on tool type
       let contentToScan = '';
 
-      if (toolCall.tool === 'Edit') {
-        contentToScan = toolCall.arguments?.new_string || '';
-      } else if (toolCall.tool === 'Write') {
-        contentToScan = toolCall.arguments?.content || '';
+      if (toolCall.tool_name === 'Edit') {
+        contentToScan = toolCall.tool_input?.new_string || '';
+      } else if (toolCall.tool_name === 'Write') {
+        contentToScan = toolCall.tool_input?.content || '';
       }
 
       if (!contentToScan) {
@@ -146,36 +148,10 @@ function main() {
 
       if (findings.length === 0) {
         // No PII found, allow operation
-        console.log(JSON.stringify({
-          status: 'pass',
-          message: 'No PII detected'
-        }));
         process.exit(0);
       }
 
       // PII detected, report and block
-      const criticalCount = findings.filter(f => f.severity === 'critical').length;
-      const highCount = findings.filter(f => f.severity === 'high').length;
-
-      const report = {
-        status: 'blocked',
-        message: `PII detected: ${findings.length} item(s) found`,
-        summary: {
-          total: findings.length,
-          critical: criticalCount,
-          high: highCount,
-          medium: findings.length - criticalCount - highCount
-        },
-        findings: findings.map(f => ({
-          type: f.type,
-          description: f.description,
-          severity: f.severity,
-          detected: f.redacted,
-          suggestion: `Replace with: ${f.redacted}`
-        })),
-        recommendation: 'Remove or redact PII before proceeding. Use tokenization or environment variables for sensitive data.'
-      };
-
       console.error('\n⚠️  PII SCANNER: Content blocked');
       console.error('━'.repeat(40));
       console.error(`Found ${findings.length} PII item(s):\n`);
@@ -192,8 +168,8 @@ function main() {
       console.error('Recommendation: Remove or redact PII before writing to files.');
       console.error('Use environment variables or secret managers for sensitive data.\n');
 
-      console.log(JSON.stringify(report));
-      process.exit(1);
+      // Exit code 2 is what makes Claude Code block the tool call.
+      process.exit(2);
 
     } catch (error) {
       console.error('PII Scanner Error:', error.message);
@@ -203,4 +179,8 @@ function main() {
   });
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { scanForPII, redactValue };

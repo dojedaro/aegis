@@ -14,7 +14,7 @@ export class AboutDemo {
         <h2>Transforming Compliance with AI Agents</h2>
         <p>
           A Claude agent reviews systems against GDPR, eIDAS 2.0, AML/KYC and the EU AI Act. Its tools do the
-          parts that must be exact, so its findings cite real regulation articles.
+          parts that must be exact, so every finding cites an article from its regulation library.
         </p>
       </div>
 
@@ -114,7 +114,7 @@ export class AboutDemo {
           <li>
             <span class="about-list-icon">◆</span>
             <div class="about-list-content">
-              <strong>subagents/</strong>
+              <strong>.claude/agents/</strong>
               <span>4 AI specialist prompts with deep domain expertise in regulations, risk, audit, and security</span>
             </div>
           </li>

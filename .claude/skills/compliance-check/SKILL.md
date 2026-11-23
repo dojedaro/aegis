@@ -1,3 +1,8 @@
+---
+name: compliance-check
+description: "Analyze code, configuration, or documents for regulatory compliance against eIDAS 2.0, GDPR, and AML/KYC requirements."
+---
+
 # /compliance-check - Regulatory Compliance Analysis
 
 Analyze code, configuration, or documents for regulatory compliance against eIDAS 2.0, GDPR, and AML/KYC requirements.

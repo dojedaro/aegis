@@ -1,3 +1,8 @@
+---
+name: audit-report
+description: "Generate comprehensive audit reports from the audit trail for regulatory compliance reviews and internal audits."
+---
+
 # /audit-report - Generate Audit Documentation
 
 Generate comprehensive audit reports from the audit trail for regulatory compliance reviews and internal audits.

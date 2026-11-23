@@ -15,7 +15,8 @@
     "build:web": "npm run build --workspace=web",
     "dev:web": "npm run dev --workspace=web",
     "demo": "npm run demo --workspace=cli",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "test:hooks": "node --test hooks/hooks.test.js"
   },
   "keywords": [
     "compliance",

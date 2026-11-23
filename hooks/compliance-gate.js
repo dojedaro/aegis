@@ -2,13 +2,13 @@
 /**
  * Compliance Gate Hook
  *
- * Pre-commit hook that validates compliance requirements before git commits.
+ * Claude Code PreToolUse hook for Bash: on `git commit` it validates compliance requirements before git commits.
  * Checks for sensitive data patterns, ensures audit trail completeness,
  * and validates compliance tagging in commit messages.
  *
  * Exit codes:
  *   0 - Pass (all compliance checks passed)
- *   1 - Block (compliance violations found)
+ *   2 - Block (compliance violations found; stderr is shown to Claude)
  */
 
 const fs = require('fs');
@@ -165,7 +165,7 @@ function main() {
   process.stdin.on('end', () => {
     try {
       const hookData = JSON.parse(input);
-      const command = hookData.arguments?.command || '';
+      const command = hookData.tool_input?.command || '';
 
       // Only process git commit commands
       if (!command.includes('git commit')) {
@@ -221,13 +221,8 @@ function main() {
         console.error('2. Use environment variables or secret managers');
         console.error('3. Add sensitive files to .gitignore\n');
 
-        console.log(JSON.stringify({
-          status: 'blocked',
-          reason: 'Sensitive data detected in staged files',
-          findings: criticalFindings.length
-        }));
-
-        process.exit(1);
+        // Exit code 2 is what makes Claude Code block the tool call.
+        process.exit(2);
       }
 
       // Report warnings but allow commit
@@ -247,12 +242,6 @@ function main() {
       }
 
       console.error('✅ Compliance checks passed\n');
-
-      console.log(JSON.stringify({
-        status: 'pass',
-        warnings: warnings.length + allFindings.length,
-        message: 'Commit allowed'
-      }));
 
       process.exit(0);
 
